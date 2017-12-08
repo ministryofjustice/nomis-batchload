@@ -1,0 +1,10 @@
+extends layout
+
+block content
+
+    h1#pageHeading.heading-large Upload delius data file
+
+    form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
+        input(type="hidden" name="_csrf" value=csrfToken)
+        input(type="file" name="datafile")
+        input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")

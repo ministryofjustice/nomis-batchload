@@ -1,0 +1,229 @@
+// Path to assets for use with the file-url function
+// in the govuk frontend toolkit's url-helpers partial
+$path: "/public/images";
+
+// Import GOV.UK elements from /govuk-modules/, this will import the frontend toolkit and some base styles.
+// Take a look in /govuk-modules/_govuk-elements.scss to see which files are imported.
+@import 'govuk-elements';
+@import './layout';
+
+#proposition-links li { color: $grey-4; }
+
+a.button.button-secondary {
+    color: $black;
+    background-color: $grey-3;
+    min-width: 120px;
+    text-align: center;
+}
+
+.block {
+    display: block;
+}
+
+.midMarginBottom {
+    margin-bottom: 20px;
+}
+
+.largeMarginBottom {
+    margin-bottom: 30px;
+}
+
+.paddingBottom {
+    padding-bottom: 30px;
+}
+
+.smallPaddingBottom {
+    padding-bottom: 10px;
+}
+
+.smallPaddingTop {
+    padding-top: 10px;
+}
+
+.smallMarginTop {
+    margin-top: 10px;
+}
+
+.smallPaddingTopBottom {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.midPaddingBottom {
+    padding-bottom: 20px;
+}
+
+.borderBottom {
+    border-bottom: solid $grey-1 2px;
+}
+
+.borderBottomLight {
+    border-bottom: solid $grey-2 1px;
+}
+
+.borderTop {
+    border-top: solid $grey-1 2px;
+}
+
+.noMargin {
+    margin: 0;
+}
+
+.separatorTitle {
+    padding-top: 1.875em;
+    margin-top: 0;
+}
+
+.subText {
+    font-size: 80%;
+}
+
+#continueBtns a{
+    margin-right: 15px;
+}
+
+.inlineButtons > a, .inlineButtons > form, .inlineButtons > input {
+    margin-right: 15px;
+    float: left;
+}
+
+.boxPanel {
+    border: solid $grey-1 2px;
+    padding: 20px 0 0 0;
+    margin-left: 15px;
+}
+
+.noLeftPaddingColumn {
+    padding: 0px 15px 0px 0px;
+}
+
+.padLeftRight5 {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.padRight15 {
+    padding-right: 15px;
+}
+
+.padRight7 {
+    padding-right: 7px;
+}
+
+.padLeft7 {
+    padding-left: 7px;
+}
+
+#global-header #logo.hmppslogo {
+    background: url($path+'/hmpps_logo_small.png') no-repeat;
+    background-size: 54px 48px;
+    background-position: 0 0;
+    line-height: normal;
+}
+
+#global-header .header-wrapper{
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+#header-user {
+    float: right;
+    color: $white;
+    background-color: $govuk-blue;
+    padding: 15px;
+
+    a {
+        color: white
+    }
+}
+
+.numberedList {
+    list-style-type: decimal;
+    padding-left: 15px;
+}
+
+.conditionSelector {
+    border: solid $grey-1 2px;
+    margin-bottom: 10px;
+    padding: 15px;
+
+    div {
+        position: relative;
+    }
+
+    label {
+        padding: 5px 0 0 50px;
+        margin-right: 20px;
+    }
+
+    [type=checkbox]+label::before {
+        top: 15px;
+        left: 15px;
+    }
+
+    input:checked + label::after {
+        top: 25px;
+        left: 23px;
+    }
+}
+
+.conditionForm {
+
+    .multiple-choice [type=radio] + label::before, .multiple-choice [type=checkbox] + label::before {
+        background-color: white;
+    }
+
+    label {
+        font-size: medium;
+    }
+
+    .multiple-choice label {
+        padding: 10px 10px 9px 5px;
+    }
+
+    .multiple-choice {
+        margin-right: 0px;
+        margin-bottom: 10px;
+    }
+
+    .inlineFormItem input {
+        width: 80px;
+        margin-left: 10px;
+
+    }
+
+    .lineMarginTop {
+        margin-top: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 0px;
+    }
+
+    .conditionForm {
+        background-color: $light-blue-25;
+        padding: 10px;
+        margin-left: 15px;
+    }
+
+    .inlineText {
+        float: left;
+        padding: 30px 7px 0 7px;
+    }
+}
+
+.confirm-banner {
+    color: $white;
+    background-color: $govuk-blue;
+    padding: 1px 15px 15px;
+    text-align: center;
+    margin: 60px 0 30px 0;
+}
+
+td.spacer {
+    min-width: 120px;
+}
+
+.center {
+    text-align: center;
+}
