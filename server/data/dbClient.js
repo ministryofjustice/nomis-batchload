@@ -3,29 +3,16 @@ const TYPES = require('tedious').TYPES;
 
 module.exports = {
 
-    addCaseload: function(staffid, offenderid) {
+    addCaseload: function(line, staffid, offenderid, valid) {
         return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO CASELOADS (STAFF_ID, OFFENDER_ID) ' +
-                'VALUES (@staffid, @offenderid)';
-
-            const parameters = [
-                {column: 'staffid', type: TYPES.VarChar, value: staffid},
-                {column: 'offenderid', type: TYPES.VarChar, value: offenderid}
-            ];
-
-            execSql(sql, parameters, resolve, reject);
-        });
-    },
-
-    addCaseloadError: function(line, staffid, offenderid) {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO CASELOAD_ERRORS (LINE, STAFF_ID, OFFENDER_ID) ' +
-                'VALUES (@line, @staffid, @offenderid)';
+            const sql = 'INSERT INTO CASELOADS (LINE, STAFF_ID, OFFENDER_ID, VALID) ' +
+                'VALUES (@line, @staffid, @offenderid, @valid)';
 
             const parameters = [
                 {column: 'line', type: TYPES.VarChar, value: line},
                 {column: 'staffid', type: TYPES.VarChar, value: staffid},
-                {column: 'offenderid', type: TYPES.VarChar, value: offenderid}
+                {column: 'offenderid', type: TYPES.VarChar, value: offenderid},
+                {column: 'valid', type: TYPES.Bit, value: valid}
             ];
 
             execSql(sql, parameters, resolve, reject);
@@ -41,9 +28,10 @@ module.exports = {
 
     getErrors: function(filename, user, status) {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM CASELOAD_ERRORS`;
+            const sql = `SELECT * FROM CASELOADS WHERE VALID = 0`;
             getCollection(sql, null, resolve, reject);
         });
     }
 };
+
 

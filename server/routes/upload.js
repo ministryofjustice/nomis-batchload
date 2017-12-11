@@ -40,17 +40,20 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 
         parse(datafile.data, function(err, caseloads) {
 
+            if (err) {
+                //return res.status(400).send('Bad file format: ' + err);
+            }
+
+            console.log(caseloads);
+
             // todo better way of parsing csv using the csv library
 
             caseloads.forEach(function(row, index) {
 
-                console.log([index, row[0], row[1]].join(' - '));
+                console.log([index, row[0], row[1], isValid(row)].join(' - '));
 
-                if(isValid(row)) {
-                    dbClient.addCaseload(row[0], row[1]);
-                } else {
-                    dbClient.addCaseloadError(index, row[0], row[1]);
-                }
+                dbClient.addCaseload(index, row[0], row[1], isValid(row));
+
             });
         });
 
@@ -64,7 +67,8 @@ function isValid(row) {
 
     // todo proper validation
 
-    const valid = row[0] === 'staffid1';
+    const valid = row.length === 2 && row[0].length > 1 && row[1].length > 1;
+
     console.log(valid);
     return valid;
 }
