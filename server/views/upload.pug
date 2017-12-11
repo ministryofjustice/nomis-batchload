@@ -2,9 +2,27 @@ extends layout
 
 block content
 
-    h1#pageHeading.heading-large Upload delius data file
+    h1.heading-large Upload caseload CSV data
 
     form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
         input(type="hidden" name="_csrf" value=csrfToken)
         input(type="file" name="datafile")
         input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
+
+
+    h1.heading-large Pending caseload data
+
+        h2 Valid rows to process
+            p #{pending}
+
+        h2 Errors to fix
+            p #{errors}
+
+
+    p
+    a.button(href="send" role="button") Send to Nomis
+
+    p
+    a.button(href="downloadErrors" role="button") Download errors
+
+    p

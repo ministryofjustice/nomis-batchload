@@ -1,7 +1,8 @@
 const express = require('express');
 const asyncMiddleware = require('../utils/asyncMiddleware');
 
-module.exports = function({logger, dbClient, authenticationMiddleware}) {
+
+module.exports = function({logger, batchloadService, authenticationMiddleware}) {
     const router = express.Router();
     router.use(authenticationMiddleware());
 
@@ -13,12 +14,13 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
     });
 
     router.get('/', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /jobs');
+        logger.debug('GET /send');
 
-        const jobs = await dbClient.getJobs();
+        await batchloadService.send();
 
-        res.render('jobs', {jobs});
+        res.redirect('/');
     }));
 
     return router;
 };
+

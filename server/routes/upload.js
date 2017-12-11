@@ -16,7 +16,13 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 
     router.get('/', asyncMiddleware(async (req, res, next) => {
         logger.debug('GET /upload');
-        res.render('upload');
+
+        const pending = await dbClient.getPending();
+        const errors = await dbClient.getErrors();
+
+        // todo format the data for display
+
+        res.render('upload', {pending: pending.length, errors: errors.length});
     }));
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
@@ -32,22 +38,33 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
             return res.status(400).send('CSV only.');
         }
 
-        const dataBuffer = datafile.data;
-        console.log(dataBuffer.length);
-        console.log(dataBuffer.toString('utf8'));
+        parse(datafile.data, function(err, caseloads) {
 
-        parse(dataBuffer, function(err, output) {
-            console.log(output);
-            console.log(output.length);
+            // todo better way of parsing csv using the csv library
 
-            // to do validate file
-            // to do store file? extract data? what?
+            caseloads.forEach(function(row, index) {
+
+                console.log([index, row[0], row[1]].join(' - '));
+
+                if(isValid(row)) {
+                    dbClient.addCaseload(row[0], row[1]);
+                } else {
+                    dbClient.addCaseloadError(index, row[0], row[1]);
+                }
+            });
         });
 
-        await dbClient.addBatch(datafile.name, req.user.email, 'UNSTARTED');
-
-        res.redirect('/jobs');
+        res.redirect('/');
     }));
 
     return router;
 };
+
+function isValid(row) {
+
+    // todo proper validation
+
+    const valid = row[0] === 'staffid1';
+    console.log(valid);
+    return valid;
+}

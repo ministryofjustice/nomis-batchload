@@ -27,7 +27,8 @@ const authenticationMiddleware = auth.authenticationMiddleware;
 
 const createSignInRouter = require('./routes/signIn');
 const createUploadRouter = require('../server/routes/upload');
-const createJobsRouter = require('../server/routes/jobs');
+const createSendRouter = require('../server/routes/send');
+
 const dbClient = require('./data/dbClient');
 
 const version = moment.now().toString();
@@ -211,7 +212,7 @@ module.exports = function createApp({
     });
 
     app.use('/', createUploadRouter({logger, dbClient, authenticationMiddleware}));
-    app.use('/jobs', createJobsRouter({logger, dbClient, authenticationMiddleware}));
+    app.use('/send', createSendRouter({logger, batchloadService, authenticationMiddleware}));
 
     // Error Handler
     app.use(function(req, res, next) {
