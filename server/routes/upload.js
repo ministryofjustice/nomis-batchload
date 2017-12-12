@@ -22,7 +22,11 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 
         // todo format the data for display
 
-        res.render('upload', {pending: pending.length, errors: errors.length});
+        res.render('upload', {
+            result: req.query.result,
+            error: req.query.error,
+            pending: pending.length,
+            errors: errors.length});
     }));
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
@@ -38,37 +42,51 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
             return res.status(400).send('CSV only.');
         }
 
-        parse(datafile.data, function(err, caseloads) {
+        try {
+            const result = await parseCsv(datafile, dbClient);
+            res.redirect('/?result=' + result);
 
-            if (err) {
-                //return res.status(400).send('Bad file format: ' + err);
-            }
+        } catch(error) {
+            res.redirect('/?error=' + error);
+        }
 
-            console.log(caseloads);
-
-            // todo better way of parsing csv using the csv library
-
-            caseloads.forEach(function(row, index) {
-
-                console.log([index, row[0], row[1], isValid(row)].join(' - '));
-
-                dbClient.addCaseload(index, row[0], row[1], isValid(row));
-
-            });
-        });
-
-        res.redirect('/');
     }));
 
     return router;
 };
 
+function parseCsv(datafile, dbClient) {
+
+    return new Promise(function(resolve, reject) {
+        let index = 0;
+
+        const parser = parse({delimiter: ',', skip_empty_lines: true});
+
+        parser.on('readable', function() {
+            while(record = parser.read()) {
+                dbClient.addCaseload(index, record[0], record[1], isValid(record));
+            }
+        });
+
+        parser.on('error', function(err) {
+            return reject(err.message);
+        });
+
+        parser.on('finish', function(){
+            return resolve(parser.lines);
+        });
+
+        parser.write(datafile.data);
+        parser.end();
+    })
+
+
+
+
+}
+
+
 function isValid(row) {
-
     // todo proper validation
-
-    const valid = row.length === 2 && row[0].length > 1 && row[1].length > 1;
-
-    console.log(valid);
-    return valid;
+    return row.length === 2 && row[0].length > 1 && row[1].length > 1;
 }

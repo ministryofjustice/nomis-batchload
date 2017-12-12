@@ -9,20 +9,27 @@ block content
         input(type="file" name="datafile")
         input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
 
+    if (result)
+        h1.heading-medium Upload Success
+        p Successfully processed #{result} lines
+
+    if (error)
+        h1.heading-medium Upload Error
+        div The following error occured:
+        | #{error}
 
     h1.heading-large Pending caseload data
 
-        h2 Valid rows to process
-            p #{pending}
+        h1.heading-medium Valid rows to process
+        div #{pending}
 
-        h2 Errors to fix
-            p #{errors}
+        h1.heading-medium Errors to fix
+        div #{errors}
 
 
-    p
     a.button(href="send" role="button") Send to Nomis
-
-    p
+    br
+    br
     a.button(href="downloadErrors" role="button") Download errors
-
-    p
+    br
+    br

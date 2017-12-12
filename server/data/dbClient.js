@@ -21,7 +21,7 @@ module.exports = {
 
     getPending: function(filename, user, status) {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM CASELOADS`;
+            const sql = `SELECT * FROM CASELOADS WHERE VALID = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
