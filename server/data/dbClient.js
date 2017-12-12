@@ -1,37 +1,45 @@
-const {getCollection, execSql} = require('./dataAccess/dbMethods');
-const TYPES = require('tedious').TYPES;
+const config = require('../../knexfile.js');
+const knex = require('knex')(config);
 
 module.exports = {
 
-    addCaseload: function(line, staffid, offenderid, valid) {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO CASELOADS (LINE, STAFF_ID, OFFENDER_ID, VALID) ' +
-                'VALUES (@line, @staffid, @offenderid, @valid)';
-
-            const parameters = [
-                {column: 'line', type: TYPES.VarChar, value: line},
-                {column: 'staffid', type: TYPES.VarChar, value: staffid},
-                {column: 'offenderid', type: TYPES.VarChar, value: offenderid},
-                {column: 'valid', type: TYPES.Bit, value: valid}
-            ];
-
-            execSql(sql, parameters, resolve, reject);
+    stageCaseload: function(offenderNomis, offenderPnc, staffId) {
+        knex('OM_RELATIONS_STAGING').insert({
+            OFFENDER_NOMIS: offenderNomis,
+            OFFENDER_PNC: offenderPnc,
+            STAFF_ID: staffId
+        }).then(function() {
+            return;
+        }).catch(function(err) {
+            console.error(err);
+            return err;
         });
     },
 
-    getPending: function(filename, user, status) {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM CASELOADS WHERE VALID = 1`;
-            getCollection(sql, null, resolve, reject);
-        });
+    getPending: function() {
+        return knex('OM_RELATIONS').select('*').where({VALID: '1', PENDING: '1'})
+            .then(function(rows) {
+                return rows;
+            })
+            .catch(function(err) {
+                console.error(err);
+                return err;
+            });
     },
 
-    getErrors: function(filename, user, status) {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM CASELOADS WHERE VALID = 0`;
-            getCollection(sql, null, resolve, reject);
-        });
+    getErrors: function() {
+        return knex('OM_RELATIONS').select('*').where({VALID: '0'})
+            .then(function(rows) {
+                return rows;
+            })
+            .catch(function(err) {
+                console.error(err);
+                return err;
+            });
+    },
+
+    mergeStagingToMaster: function() {
+        // todo
     }
 };
-
 

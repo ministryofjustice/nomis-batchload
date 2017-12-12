@@ -58,13 +58,13 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 function parseCsv(datafile, dbClient) {
 
     return new Promise(function(resolve, reject) {
-        let index = 0;
 
         const parser = parse({delimiter: ',', skip_empty_lines: true});
 
         parser.on('readable', function() {
+            let record;
             while(record = parser.read()) {
-                dbClient.addCaseload(index, record[0], record[1], isValid(record));
+                dbClient.stageCaseload(record[0], record[1], record[2]);
             }
         });
 
@@ -72,21 +72,17 @@ function parseCsv(datafile, dbClient) {
             return reject(err.message);
         });
 
-        parser.on('finish', function(){
+        parser.on('finish', function() {
+
+            // todo fill in the missing nomis ids
+
+            // todo merge staging into master, eg
+            dbClient.mergeStagingToMaster();
+
             return resolve(parser.lines);
         });
 
         parser.write(datafile.data);
         parser.end();
-    })
-
-
-
-
-}
-
-
-function isValid(row) {
-    // todo proper validation
-    return row.length === 2 && row[0].length > 1 && row[1].length > 1;
+    });
 }
