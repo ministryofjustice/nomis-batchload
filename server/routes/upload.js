@@ -55,6 +55,38 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 
     }));
 
+    router.get('/fill', asyncMiddleware(async (req, res, next) => {
+        logger.debug('GET /fill');
+
+        console.log('FILL MISSING NOMIS IDS');
+
+        res.redirect('/');
+    }));
+
+    router.get('/merge', asyncMiddleware(async (req, res, next) => {
+        logger.debug('GET /merge');
+
+        console.log('MERGE STAGING TO MASTER');
+
+        res.redirect('/');
+    }));
+
+    router.get('/send', asyncMiddleware(async (req, res, next) => {
+        logger.debug('GET /send');
+
+        console.log('SEND ALL PENDING RECORDS TO NOMIS');
+
+        res.redirect('/');
+    }));
+
+    router.get('/downloadErrors', asyncMiddleware(async (req, res, next) => {
+        logger.debug('GET /downloadErrors');
+
+        console.log('MAKE A CSV OF ERROR RECORDS IN MASTER FOR DOWNLOAD');
+
+        res.redirect('/');
+    }));
+
     return router;
 };
 
