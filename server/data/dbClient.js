@@ -1,45 +1,54 @@
-const config = require('../../knexfile.js');
-const knex = require('knex')(config);
+const {getCollection, execSql} = require('./dataAccess/dbMethods');
+const TYPES = require('tedious').TYPES;
 
 module.exports = {
 
     stageCaseload: function(offenderNomis, offenderPnc, staffId) {
-        knex('OM_RELATIONS_STAGING').insert({
-            OFFENDER_NOMIS: offenderNomis,
-            OFFENDER_PNC: offenderPnc,
-            STAFF_ID: staffId
-        }).then(function() {
-            return;
-        }).catch(function(err) {
-            console.error(err);
-            return err;
+
+        return new Promise((resolve, reject) => {
+            const sql = 'IF NOT EXISTS (SELECT * FROM OM_RELATIONS_STAGING WHERE ' +
+                'OFFENDER_NOMIS like @OFFENDER_NOMIS AND ' +
+                'OFFENDER_PNC like @OFFENDER_PNC AND ' +
+                'STAFF_ID like @STAFF_ID' + ') ' +
+                'BEGIN INSERT INTO OM_RELATIONS_STAGING ' +
+                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID) VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID) END';
+
+            const parameters = [
+                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: offenderNomis},
+                {column: 'OFFENDER_PNC', type: TYPES.VarChar, value: offenderPnc},
+                {column: 'STAFF_ID', type: TYPES.VarChar, value: staffId}
+            ];
+
+            execSql(sql, parameters, resolve, reject);
         });
     },
 
-    getPending: function() {
-        return knex('OM_RELATIONS').select('*').where({VALID: '1', PENDING: '1'})
-            .then(function(rows) {
-                return rows;
-            })
-            .catch(function(err) {
-                console.error(err);
-                return err;
-            });
+    getPendingCount: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            getCollection(sql, null, resolve, reject);
+        });
     },
 
-    getErrors: function() {
-        return knex('OM_RELATIONS').select('*').where({VALID: '0'})
-            .then(function(rows) {
-                return rows;
-            })
-            .catch(function(err) {
-                console.error(err);
-                return err;
-            });
+    getErrorsCount: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 0`;
+            getCollection(sql, null, resolve, reject);
+        });
     },
 
-    mergeStagingToMaster: function() {
-        // todo
+    getStagedIncompleteCount: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS like ''`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getStagedCount: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE NOT OFFENDER_NOMIS like ''`;
+            getCollection(sql, null, resolve, reject);
+        });
     }
 };
 

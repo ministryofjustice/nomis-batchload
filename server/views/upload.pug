@@ -2,7 +2,7 @@ extends layout
 
 block content
 
-    h1.heading-large Upload caseload CSV data
+    h1.heading-large Upload caseload data
 
     form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
         input(type="hidden" name="_csrf" value=csrfToken)
@@ -10,26 +10,45 @@ block content
         input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
 
     if (result)
-        h1.heading-medium Upload Success
-        p Successfully processed #{result} lines
+        h1.heading-medium Uploaded rows
+        div #{result}
 
     if (error)
         h1.heading-medium Upload Error
-        div The following error occured:
-        | #{error}
+        div #{error}
 
-    h1.heading-large Pending caseload data
+    if(stagedIncomplete || staged)
+        hr
+        h1.heading-large Staged caseload data
 
-        h1.heading-medium Valid rows to process
-        div #{pending}
+            h1.heading-medium Missing nomis IDs
+            div #{stagedIncomplete}
 
-        h1.heading-medium Errors to fix
-        div #{errors}
+            a.button(href="fill" role="button") Fill in Nomis numbers
+            br
+            br
+
+            h1.heading-medium Ready to merge
+            div #{staged}
+
+            a.button(href="merge" role="button") Merge staging to master
+            br
+            br
+
+    if(true || pending || errors)
+        hr
+        h1.heading-large Pending caseload data
+
+            h1.heading-medium Valid rows to process
+            div #{pending}
+
+            h1.heading-medium Errors to fix
+            div #{errors}
 
 
-    a.button(href="send" role="button") Send to Nomis
-    br
-    br
-    a.button(href="downloadErrors" role="button") Download errors
-    br
-    br
+        a.button(href="send" role="button") Send to Nomis
+        br
+        br
+        a.button(href="downloadErrors" role="button") Download errors
+        br
+        br

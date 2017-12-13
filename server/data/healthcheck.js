@@ -1,7 +1,6 @@
 const config = require('../config.js');
+const {getCollection} = require('./dataAccess/dbMethods');
 const logger = require('../../log.js');
-
-const dbClient = require('./dbClient');
 
 const superagent = require('superagent');
 
@@ -14,11 +13,7 @@ module.exports = {
 
 function dbCheck() {
     return new Promise((resolve, reject) => {
-        try {
-            return resolve(dbClient.getPending());
-        } catch(err) {
-            reject(err);
-        }
+        getCollection('SELECT 1 AS [ok]', null, resolve, reject);
     });
 }
 

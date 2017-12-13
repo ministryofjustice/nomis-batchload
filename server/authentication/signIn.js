@@ -58,7 +58,13 @@ async function getRole(eliteAuthorisationToken) {
 
     if (roles && roles.length > 0) {
         const role = roles.find(role => {
-            return role.roleCode.includes('LICENCES');
+
+            return true;
+
+            // todo What role is required to access the batch load system?
+            // return role.roleCode.includes('BATCH');
+
+            // todo System user login when calling nomis
         });
 
         logger.info(`Selected role: ${role.roleCode}`);

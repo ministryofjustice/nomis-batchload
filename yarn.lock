@@ -6215,7 +6215,7 @@ tar@^2.0.0, tar@^2.2.1:
     fstream "^1.0.2"
     inherits "2"
 
-tedious@^2.0.0:
+tedious@^2.1.5:
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/tedious/-/tedious-2.1.5.tgz#85574d22cde1769dfe4cc4a0d697175b13e5d318"
   dependencies:

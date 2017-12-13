@@ -17,16 +17,19 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
     router.get('/', asyncMiddleware(async (req, res, next) => {
         logger.debug('GET /upload');
 
-        const pending = await dbClient.getPending();
-        const errors = await dbClient.getErrors();
-
-        // todo format the data for display
+        const stagedIncomplete = await dbClient.getStagedIncompleteCount();
+        const staged = await dbClient.getStagedCount();
+        const pending = await dbClient.getPendingCount();
+        const errors = await dbClient.getErrorsCount();
 
         res.render('upload', {
             result: req.query.result,
             error: req.query.error,
-            pending: pending.length,
-            errors: errors.length});
+            stagedIncomplete: stagedIncomplete[0].COUNT.value,
+            staged: staged[0].COUNT.value,
+            pending: pending[0].COUNT.value,
+            errors: errors[0].COUNT.value
+            });
     }));
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
@@ -64,7 +67,11 @@ function parseCsv(datafile, dbClient) {
         parser.on('readable', function() {
             let record;
             while(record = parser.read()) {
-                dbClient.stageCaseload(record[0], record[1], record[2]);
+                const offenderNomis = record[0].length > 1 ? record[0] : '';
+                const offenderPnc = record[1].length > 1 ? record[1] : '';
+                const staffId = record[2].length > 1 ? record[2] : '';
+
+                dbClient.stageCaseload(offenderNomis, offenderPnc, staffId);
             }
         });
 
@@ -73,12 +80,6 @@ function parseCsv(datafile, dbClient) {
         });
 
         parser.on('finish', function() {
-
-            // todo fill in the missing nomis ids
-
-            // todo merge staging into master, eg
-            dbClient.mergeStagingToMaster();
-
             return resolve(parser.lines);
         });
 
