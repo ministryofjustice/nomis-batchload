@@ -1,9 +1,11 @@
 const {getCollection, execSql} = require('./dataAccess/dbMethods');
 const TYPES = require('tedious').TYPES;
 
+const logger = require('../../log.js');
+
 module.exports = {
 
-    stageCaseload: function(offenderNomis, offenderPnc, staffId) {
+    stageCaseload: function(offenderNomis, offenderPnc, staffId, valid) {
 
         return new Promise((resolve, reject) => {
             const sql = 'IF NOT EXISTS (SELECT * FROM OM_RELATIONS_STAGING WHERE ' +
@@ -11,15 +13,23 @@ module.exports = {
                 'OFFENDER_PNC like @OFFENDER_PNC AND ' +
                 'STAFF_ID like @STAFF_ID' + ') ' +
                 'BEGIN INSERT INTO OM_RELATIONS_STAGING ' +
-                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID) VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID) END';
+                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
 
             const parameters = [
                 {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: offenderNomis},
                 {column: 'OFFENDER_PNC', type: TYPES.VarChar, value: offenderPnc},
-                {column: 'STAFF_ID', type: TYPES.VarChar, value: staffId}
+                {column: 'STAFF_ID', type: TYPES.VarChar, value: staffId},
+                {column: 'VALID', type: TYPES.Bit, value: valid}
             ];
 
             execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    getPending: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            getCollection(sql, null, resolve, reject);
         });
     },
 
@@ -37,17 +47,94 @@ module.exports = {
         });
     },
 
+    getStagedIncomplete: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM OM_RELATIONS_STAGING WHERE VALID = 0`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
     getStagedIncompleteCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS like ''`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE VALID = 0`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getStaged: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM OM_RELATIONS_STAGING WHERE VALID = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
 
     getStagedCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE NOT OFFENDER_NOMIS like ''`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE VALID = 1`;
             getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    findNomisId: function(pnc) {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT OFFENDER_NOMIS FROM OM_RELATIONS WHERE OFFENDER_PNC like '${pnc}'`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    fillNomisId: function(recordId, nomisId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, VALID = 1 WHERE ID like @ID';
+
+            const parameters = [
+                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
+                {column: 'ID', type: TYPES.VarChar, value: recordId}
+            ];
+
+            logger.info('Filling nomis id for record ID: ' + recordId + ' using nomisId: ' + nomisId);
+
+            execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    markProcessed: function(recordId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = 0, REJECTED = 0 WHERE ID like @ID';
+
+            const parameters = [
+                {column: 'ID', type: TYPES.VarChar, value: recordId}
+            ];
+
+            logger.info('Marking as processed for record ID: ' + recordId);
+
+            execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    markRejected: function(recordId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = 1, REJECTED = 1 WHERE ID like @ID';
+
+            const parameters = [
+                {column: 'ID', type: TYPES.VarChar, value: recordId}
+            ];
+
+            logger.info('Marking as rejected for record ID: ' + recordId);
+
+            execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    merge: function() {
+        return new Promise((resolve, reject) => {
+
+            // todo MATT
+
+            const sql = ``;
+            const parameters = [
+
+            ];
+            execSql(sql, parameters, resolve, reject);
         });
     }
 };

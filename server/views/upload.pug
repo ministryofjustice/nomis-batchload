@@ -35,20 +35,21 @@ block content
             br
             br
 
-    if(pending || errors)
+    if(true || pending || errors)
         hr
         h1.heading-large Pending caseload data
-
-            h1.heading-medium Valid rows to process
-            div #{pending}
 
             h1.heading-medium Errors to fix
             div #{errors}
 
+            a.button(href="downloadErrors" role="button") Download errors
+            br
+            br
 
-        a.button(href="send" role="button") Send to Nomis
-        br
-        br
-        a.button(href="downloadErrors" role="button") Download errors
-        br
-        br
+            h1.heading-medium Valid rows to process
+            div #{pending}
+
+            a.button(href="send" role="button") Send to Nomis
+            br
+            br
+

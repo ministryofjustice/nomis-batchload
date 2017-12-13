@@ -3,7 +3,7 @@ const asyncMiddleware = require('../utils/asyncMiddleware');
 
 const parse = require('csv-parse');
 
-module.exports = function({logger, dbClient, authenticationMiddleware}) {
+module.exports = function({logger, dbClient, batchloadService, authenticationMiddleware}) {
     const router = express.Router();
     router.use(authenticationMiddleware());
 
@@ -15,7 +15,7 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
     });
 
     router.get('/', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /upload');
+        logger.info('GET /upload');
 
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
         const staged = await dbClient.getStagedCount();
@@ -33,7 +33,7 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
     }));
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
-        logger.debug('POST /upload');
+        logger.info('POST /upload');
 
         if (!req.files || !req.files.datafile) {
             return res.status(400).send('No files were uploaded.');
@@ -56,31 +56,34 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
     }));
 
     router.get('/fill', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /fill');
+        logger.info('GET /fill');
 
         console.log('FILL MISSING NOMIS IDS');
+        await batchloadService.fill();
 
         res.redirect('/');
     }));
 
     router.get('/merge', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /merge');
+        logger.info('GET /merge');
 
         console.log('MERGE STAGING TO MASTER');
+        await dbClient.merge();
 
         res.redirect('/');
     }));
 
     router.get('/send', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /send');
+        logger.info('GET /send');
 
         console.log('SEND ALL PENDING RECORDS TO NOMIS');
+        await batchloadService.send();
 
         res.redirect('/');
     }));
 
     router.get('/downloadErrors', asyncMiddleware(async (req, res, next) => {
-        logger.debug('GET /downloadErrors');
+        logger.info('GET /downloadErrors');
 
         console.log('MAKE A CSV OF ERROR RECORDS IN MASTER FOR DOWNLOAD');
 
@@ -102,8 +105,9 @@ function parseCsv(datafile, dbClient) {
                 const offenderNomis = record[0].length > 1 ? record[0] : '';
                 const offenderPnc = record[1].length > 1 ? record[1] : '';
                 const staffId = record[2].length > 1 ? record[2] : '';
+                const valid = offenderNomis !== '' && staffId !== '';
 
-                dbClient.stageCaseload(offenderNomis, offenderPnc, staffId);
+                dbClient.stageCaseload(offenderNomis, offenderPnc, staffId, valid);
             }
         });
 

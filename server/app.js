@@ -27,7 +27,6 @@ const authenticationMiddleware = auth.authenticationMiddleware;
 
 const createSignInRouter = require('./routes/signIn');
 const createUploadRouter = require('../server/routes/upload');
-const createSendRouter = require('../server/routes/send');
 
 const dbClient = require('./data/dbClient');
 
@@ -211,8 +210,7 @@ module.exports = function createApp({
         }
     });
 
-    app.use('/', createUploadRouter({logger, dbClient, authenticationMiddleware}));
-    app.use('/send', createSendRouter({logger, batchloadService, authenticationMiddleware}));
+    app.use('/', createUploadRouter({logger, dbClient, batchloadService, authenticationMiddleware}));
 
     // Error Handler
     app.use(function(req, res, next) {
