@@ -13,8 +13,8 @@ module.exports = {
                 'OFFENDER_PNC like @OFFENDER_PNC AND ' +
                 'STAFF_ID like @STAFF_ID' + ') ' +
                 'BEGIN INSERT INTO OM_RELATIONS_STAGING ' +
-                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) VALUES ' +
-                '(@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
+                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) ' +
+                'VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
 
             const parameters = [
                 {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: offenderNomis},
@@ -127,16 +127,25 @@ module.exports = {
     },
 
     merge: function() {
+        const updateExistingEntries = 'UPDATE OM_RELATIONS ' +
+            'SET PENDING = 1, STAFF_ID = stage.STAFF_ID ' +
+            'FROM OM_RELATIONS master ' +
+            'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
+            'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
+            'AND master.STAFF_ID <> stage.STAFF_ID; ';
+
+        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
+            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
+            'FROM OM_RELATIONS_STAGING stage ' +
+            'WHERE NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
+
         return new Promise((resolve, reject) => {
+            const sql = 'BEGIN TRANSACTION; ' +
+                updateExistingEntries +
+                addNewEntries +
+                'COMMIT;';
 
-            // todo MATT
-
-            const sql = ``;
-            const parameters = [
-
-            ];
-            execSql(sql, parameters, resolve, reject);
+            execSql(sql, null, resolve, reject);
         });
     }
 };
-

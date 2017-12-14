@@ -64,7 +64,12 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
     router.get('/merge', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /merge');
 
-        await dbClient.merge();
+        console.log('MERGE STAGING TO MASTER');
+        try {
+            await dbClient.merge();
+        } catch(err) {
+            console.error(err);
+        }
 
         res.redirect('/');
     }));
