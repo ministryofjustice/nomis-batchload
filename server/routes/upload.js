@@ -18,7 +18,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
         const staged = await dbClient.getStagedCount();
         const pending = await dbClient.getPendingCount();
-        const errors = await dbClient.getErrorsCount();
+        const rejected = await dbClient.getRejectedCount();
 
         res.render('upload', {
             result: req.query.result,
@@ -26,7 +26,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
             stagedIncomplete: stagedIncomplete[0].COUNT.value,
             staged: staged[0].COUNT.value,
             pending: pending[0].COUNT.value,
-            errors: errors[0].COUNT.value
+            rejected: rejected[0].COUNT.value
         });
     }));
 

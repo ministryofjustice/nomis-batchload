@@ -29,21 +29,21 @@ module.exports = {
 
     getPending: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            const sql = `SELECT * FROM OM_RELATIONS WHERE PENDING = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
 
     getPendingCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
 
-    getErrorsCount: function() {
+    getRejectedCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 0`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTED = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
