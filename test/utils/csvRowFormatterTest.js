@@ -45,7 +45,7 @@ describe('csvRowFormatter', () => {
         });
 
         it('should replace staffid with empty string when invalid staffid and mark invalid', () => {
-            expect(format(['nomis', 'pnc', 's'])).to.eql({
+            expect(format(['nomis', 'pnc', ''])).to.eql({
                 offenderNomis: 'nomis',
                 offenderPnc: 'pnc',
                 staffId: '',

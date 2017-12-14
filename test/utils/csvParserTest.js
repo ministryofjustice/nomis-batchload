@@ -56,7 +56,7 @@ describe('csvParser', () => {
     describe('parse file with valid format', () => {
 
         it('should call database for valid record with invalid values', async () => {
-            const csv = 'a,b,c';
+            const csv = 'a,b,';
             await parseCsv(bufferFrom(csv));
             expect(dbClient.stageCaseload).to.be.calledWith('', '', '', false);
         });

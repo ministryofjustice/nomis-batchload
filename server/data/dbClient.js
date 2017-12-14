@@ -132,7 +132,8 @@ module.exports = {
             'FROM OM_RELATIONS master ' +
             'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
             'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
-            'AND master.STAFF_ID <> stage.STAFF_ID; ';
+            'AND master.STAFF_ID <> stage.STAFF_ID ' +
+            'AND stage.VALID = 1; ';
 
         const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
             'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
