@@ -137,12 +137,16 @@ module.exports = {
         const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
             'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
             'FROM OM_RELATIONS_STAGING stage ' +
-            'WHERE NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
+            'WHERE VALID = 1 ' +
+            'AND NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
+
+        const removeMergedEntries = 'DELETE FROM OM_RELATIONS_STAGING WHERE VALID = 1; ';
 
         return new Promise((resolve, reject) => {
             const sql = 'BEGIN TRANSACTION; ' +
                 updateExistingEntries +
                 addNewEntries +
+                removeMergedEntries +
                 'COMMIT;';
 
             execSql(sql, null, resolve, reject);

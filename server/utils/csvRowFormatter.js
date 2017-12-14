@@ -33,7 +33,7 @@ function isValidPnc(value) {
 }
 
 function isValidStaffId(value) {
-    return value.length > 1;
+    return value.length > 0;
 }
 
 function isValidRecord(offenderNomis, staffId) {
