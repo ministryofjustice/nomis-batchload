@@ -68,7 +68,11 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
         logger.info('GET /merge');
 
         console.log('MERGE STAGING TO MASTER');
-        await dbClient.merge();
+        try {
+            await dbClient.merge();
+        } catch(err) {
+            console.error(err);
+        }
 
         res.redirect('/');
     }));
