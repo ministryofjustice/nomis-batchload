@@ -67,7 +67,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         console.log('MERGE STAGING TO MASTER');
         try {
             await dbClient.merge();
-        } catch(err) {
+        } catch (err) {
             console.error(err);
         }
 
@@ -82,12 +82,17 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         res.redirect('/');
     }));
 
-    router.get('/downloadErrors', asyncMiddleware(async (req, res, next) => {
-        logger.info('GET /downloadErrors');
+    router.get('/viewErrors', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /viewErrors');
 
-        // todo
+        const rejected = await dbClient.getRejected();
 
-        res.redirect('/');
+        const report = rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+        );
+        console.log(report);
+
+        res.render('errorReport', {report});
     }));
 
     return router;

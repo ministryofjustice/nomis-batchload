@@ -41,6 +41,13 @@ module.exports = {
         });
     },
 
+    getRejected: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM OM_RELATIONS WHERE REJECTED = 1`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
     getRejectedCount: function() {
         return new Promise((resolve, reject) => {
             const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTED = 1`;

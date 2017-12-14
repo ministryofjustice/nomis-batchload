@@ -1,0 +1,24 @@
+extends layout
+
+block content
+
+    h1.heading-large Errors
+
+    table
+        thead
+            tr
+                th Row ID
+                th Timestamp
+                th Nomis
+                th PNC
+                th Staff ID
+                th Rejection
+        tbody
+            each entry in report
+                tr
+                    td #{entry[0]}
+                    td #{entry[1]}
+                    td #{entry[2]}
+                    td #{entry[3]}
+                    td #{entry[4]}
+                    td #{entry[5]}
