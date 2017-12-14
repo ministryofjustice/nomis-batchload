@@ -13,7 +13,8 @@ module.exports = {
                 'OFFENDER_PNC like @OFFENDER_PNC AND ' +
                 'STAFF_ID like @STAFF_ID' + ') ' +
                 'BEGIN INSERT INTO OM_RELATIONS_STAGING ' +
-                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
+                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) VALUES ' +
+                '(@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
 
             const parameters = [
                 {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: offenderNomis},

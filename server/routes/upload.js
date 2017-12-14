@@ -1,9 +1,7 @@
 const express = require('express');
 const asyncMiddleware = require('../utils/asyncMiddleware');
 
-const parse = require('csv-parse');
-
-module.exports = function({logger, dbClient, batchloadService, authenticationMiddleware}) {
+module.exports = function({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}) {
     const router = express.Router();
     router.use(authenticationMiddleware());
 
@@ -29,7 +27,7 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
             staged: staged[0].COUNT.value,
             pending: pending[0].COUNT.value,
             errors: errors[0].COUNT.value
-            });
+        });
     }));
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
@@ -46,10 +44,10 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
         }
 
         try {
-            const result = await parseCsv(datafile, dbClient);
+            const result = await csvParser.parseCsv(datafile.data);
             res.redirect('/?result=' + result);
 
-        } catch(error) {
+        } catch (error) {
             res.redirect('/?error=' + error);
         }
 
@@ -58,7 +56,6 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
     router.get('/fill', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /fill');
 
-        console.log('FILL MISSING NOMIS IDS');
         await batchloadService.fill();
 
         res.redirect('/');
@@ -67,7 +64,6 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
     router.get('/merge', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /merge');
 
-        console.log('MERGE STAGING TO MASTER');
         await dbClient.merge();
 
         res.redirect('/');
@@ -76,7 +72,6 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
     router.get('/send', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /send');
 
-        console.log('SEND ALL PENDING RECORDS TO NOMIS');
         await batchloadService.send();
 
         res.redirect('/');
@@ -85,41 +80,10 @@ module.exports = function({logger, dbClient, batchloadService, authenticationMid
     router.get('/downloadErrors', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /downloadErrors');
 
-        console.log('MAKE A CSV OF ERROR RECORDS IN MASTER FOR DOWNLOAD');
+        // todo
 
         res.redirect('/');
     }));
 
     return router;
 };
-
-function parseCsv(datafile, dbClient) {
-
-    return new Promise(function(resolve, reject) {
-
-        const parser = parse({delimiter: ',', skip_empty_lines: true});
-
-        parser.on('readable', function() {
-            let record;
-            while(record = parser.read()) {
-                const offenderNomis = record[0].length > 1 ? record[0] : '';
-                const offenderPnc = record[1].length > 1 ? record[1] : '';
-                const staffId = record[2].length > 1 ? record[2] : '';
-                const valid = offenderNomis !== '' && staffId !== '';
-
-                dbClient.stageCaseload(offenderNomis, offenderPnc, staffId, valid);
-            }
-        });
-
-        parser.on('error', function(err) {
-            return reject(err.message);
-        });
-
-        parser.on('finish', function() {
-            return resolve(parser.lines);
-        });
-
-        parser.write(datafile.data);
-        parser.end();
-    });
-}
