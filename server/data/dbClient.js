@@ -92,7 +92,9 @@ module.exports = {
 
     fillNomisId: function(recordId, nomisId) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, VALID = 1 WHERE ID like @ID';
+            const sql =
+                'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, VALID = 1, REJECTED = 0, ' +
+                'REJECTION = null WHERE ID like @ID';
 
             const parameters = [
                 {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
@@ -100,6 +102,22 @@ module.exports = {
             ];
 
             logger.info('Filling nomis id for record ID: ' + recordId + ' using nomisId: ' + nomisId);
+
+            execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    markFillRejected: function(recordId, rejection) {
+        return new Promise((resolve, reject) => {
+            const sql =
+                'UPDATE OM_RELATIONS_STAGING SET VALID = 0, REJECTED = 1, REJECTION = @REJECTION WHERE ID like @ID';
+
+            const parameters = [
+                {column: 'ID', type: TYPES.VarChar, value: recordId},
+                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
+            ];
+
+            logger.info('Marking as rejected for record ID: ' + recordId);
 
             execSql(sql, parameters, resolve, reject);
         });
@@ -119,12 +137,13 @@ module.exports = {
         });
     },
 
-    markRejected: function(recordId) {
+    markRejected: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS SET PENDING = 1, REJECTED = 1 WHERE ID like @ID';
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = 1, REJECTED = 1, REJECTION = @REJECTION WHERE ID like @ID';
 
             const parameters = [
-                {column: 'ID', type: TYPES.VarChar, value: recordId}
+                {column: 'ID', type: TYPES.VarChar, value: recordId},
+                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
             ];
 
             logger.info('Marking as rejected for record ID: ' + recordId);

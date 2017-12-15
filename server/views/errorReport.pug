@@ -2,7 +2,10 @@ extends layout
 
 block content
 
-    h1.heading-large Errors
+    div.back-link-container
+        a.link-back(href="/") Back
+
+    h1.heading-large #{heading}
 
     table
         thead
@@ -22,3 +25,10 @@ block content
                     td #{entry[3]}
                     td #{entry[4]}
                     td #{entry[5]}
+
+
+    br
+    br
+    a#backBtn.requiredButton.button.button(href="/" role="button") Back
+    br
+    br

@@ -21,8 +21,12 @@ block content
             div #{stagedIncomplete}
 
             a.button(href="fill" role="button") Fill in Nomis numbers
-            br
-            br
+
+            if stagedIncomplete > 0
+                =" "
+                a.button(href="viewIncomplete" role="button") View incomplete rows
+                br
+                br
 
             h1.heading-medium Ready to merge
             div #{staged}
@@ -42,9 +46,10 @@ block content
             br
             br
 
-            h1.heading-medium Rows that failed last time
-            div #{rejected}
+            if rejected > 0
+                h1.heading-medium Rows that failed last time
+                div #{rejected}
 
-            a.button(href="viewErrors" role="button") View failed rows
-            br
-            br
+                a.button(href="viewErrors" role="button") View failed rows
+                br
+                br

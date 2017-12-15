@@ -82,6 +82,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         res.redirect('/');
     }));
 
+    router.get('/viewIncomplete', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /viewIncomplete');
+
+        const incomplete = await dbClient.getStagedIncomplete();
+
+        const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+        );
+
+        res.render('errorReport', {heading: 'Incomplete', report});
+    }));
+
     router.get('/viewErrors', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /viewErrors');
 
@@ -90,9 +102,8 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         const report = rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
             r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
         );
-        console.log(report);
 
-        res.render('errorReport', {report});
+        res.render('errorReport', {heading: 'Nomis Rejections', report});
     }));
 
     return router;
