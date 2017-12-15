@@ -11,18 +11,18 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         try {
             const incomplete = await dbClient.getStagedIncomplete();
 
-            incomplete.forEach(async record => {
+            await Promise.all(incomplete.map(async record => {
                 const pnc = record.OFFENDER_PNC.value;
                 const nomisId = await findNomisId(record.OFFENDER_PNC.value);
 
                 logger.info('For pnc: ' + pnc + ' found nomisId: ' + nomisId);
 
-                if(nomisId && nomisId !== 'ERROR') {
+                if (nomisId && nomisId !== 'ERROR') {
                     await dbClient.fillNomisId(record.ID.value, nomisId);
                 } else {
                     logger.warn('Did not find valid nomisID for pnc: ' + pnc);
                 }
-            });
+            }));
 
         } catch (error) {
             logger.error('Error during fill: ', error.message);
@@ -55,7 +55,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         try {
             const pending = await dbClient.getPending();
 
-            pending.forEach(async record => {
+            await Promise.all(pending.map(async record => {
 
                 const nomisId = record.OFFENDER_NOMIS.value;
                 const staffId = record.STAFF_ID.value;
@@ -63,12 +63,12 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 const result = await updateNomis(nomisId, staffId);
                 console.log('Nomis response ' + result);
 
-                if(result === 'ERROR'){
+                if(result === 'ERROR') {
                     await dbClient.markRejected(record.ID.value);
                 } else {
                     await dbClient.markProcessed(record.ID.value);
                 }
-            });
+            }));
 
         } catch (error) {
             logger.error('Error during send: ', error.message);
