@@ -28,8 +28,6 @@ const authenticationMiddleware = auth.authenticationMiddleware;
 const createSignInRouter = require('./routes/signIn');
 const createUploadRouter = require('../server/routes/upload');
 
-const dbClient = require('./data/dbClient');
-
 const version = moment.now().toString();
 const production = process.env.NODE_ENV === 'production';
 const testMode = process.env.NODE_ENV === 'test';
@@ -37,7 +35,9 @@ const testMode = process.env.NODE_ENV === 'test';
 module.exports = function createApp({
                                         logger,
                                         signInService,
-                                        batchloadService
+                                        batchloadService,
+                                        dbClient,
+                                        csvParser
                                     }) {
     const app = express();
     app.set('port', process.env.PORT || 3001);
@@ -210,7 +210,7 @@ module.exports = function createApp({
         }
     });
 
-    app.use('/', createUploadRouter({logger, dbClient, batchloadService, authenticationMiddleware}));
+    app.use('/', createUploadRouter({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}));
 
     // Error Handler
     app.use(function(req, res, next) {

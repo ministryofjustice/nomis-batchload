@@ -63,7 +63,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 const result = await updateNomis(nomisId, staffId);
                 console.log('Nomis response ' + result);
 
-                if(result === 'ERROR'){
+                if(result === 'ERROR') {
                     await dbClient.markRejected(record.ID.value);
                 } else {
                     await dbClient.markProcessed(record.ID.value);

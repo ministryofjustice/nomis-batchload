@@ -9,10 +9,6 @@ block content
         input(type="file" name="datafile")
         input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
 
-    if (result)
-        h1.heading-medium Uploaded rows
-        div #{result}
-
     if (error)
         h1.heading-medium Upload Error
         div #{error}
@@ -35,21 +31,20 @@ block content
             br
             br
 
-    if(true || pending || errors)
+    if(pending || rejected)
         hr
         h1.heading-large Pending caseload data
 
-            h1.heading-medium Errors to fix
-            div #{errors}
-
-            a.button(href="downloadErrors" role="button") Download errors
-            br
-            br
-
-            h1.heading-medium Valid rows to process
+            h1.heading-medium Rows to process
             div #{pending}
 
             a.button(href="send" role="button") Send to Nomis
             br
             br
 
+            h1.heading-medium Rows that failed last time
+            div #{rejected}
+
+            a.button(href="downloadErrors" role="button") Download failed rows
+            br
+            br
