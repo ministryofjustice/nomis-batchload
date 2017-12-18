@@ -29,21 +29,28 @@ module.exports = {
 
     getPending: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            const sql = `SELECT * FROM OM_RELATIONS WHERE PENDING = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
 
     getPendingCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 1 AND PENDING = 1`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
 
-    getErrorsCount: function() {
+    getRejected: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE VALID = 0`;
+            const sql = `SELECT * FROM OM_RELATIONS WHERE REJECTED = 1`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getRejectedCount: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTED = 1`;
             getCollection(sql, null, resolve, reject);
         });
     },
@@ -85,7 +92,9 @@ module.exports = {
 
     fillNomisId: function(recordId, nomisId) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, VALID = 1 WHERE ID like @ID';
+            const sql =
+                'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, VALID = 1, REJECTED = 0, ' +
+                'REJECTION = null WHERE ID like @ID';
 
             const parameters = [
                 {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
@@ -93,6 +102,22 @@ module.exports = {
             ];
 
             logger.info('Filling nomis id for record ID: ' + recordId + ' using nomisId: ' + nomisId);
+
+            execSql(sql, parameters, resolve, reject);
+        });
+    },
+
+    markFillRejected: function(recordId, rejection) {
+        return new Promise((resolve, reject) => {
+            const sql =
+                'UPDATE OM_RELATIONS_STAGING SET VALID = 0, REJECTED = 1, REJECTION = @REJECTION WHERE ID like @ID';
+
+            const parameters = [
+                {column: 'ID', type: TYPES.VarChar, value: recordId},
+                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
+            ];
+
+            logger.info('Marking as rejected for record ID: ' + recordId);
 
             execSql(sql, parameters, resolve, reject);
         });
@@ -112,12 +137,13 @@ module.exports = {
         });
     },
 
-    markRejected: function(recordId) {
+    markRejected: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS SET PENDING = 1, REJECTED = 1 WHERE ID like @ID';
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = 1, REJECTED = 1, REJECTION = @REJECTION WHERE ID like @ID';
 
             const parameters = [
-                {column: 'ID', type: TYPES.VarChar, value: recordId}
+                {column: 'ID', type: TYPES.VarChar, value: recordId},
+                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
             ];
 
             logger.info('Marking as rejected for record ID: ' + recordId);
@@ -132,17 +158,22 @@ module.exports = {
             'FROM OM_RELATIONS master ' +
             'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
             'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
-            'AND master.STAFF_ID <> stage.STAFF_ID; ';
+            'AND master.STAFF_ID <> stage.STAFF_ID ' +
+            'AND stage.VALID = 1; ';
 
         const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
             'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
             'FROM OM_RELATIONS_STAGING stage ' +
-            'WHERE NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
+            'WHERE VALID = 1 ' +
+            'AND NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
+
+        const removeMergedEntries = 'DELETE FROM OM_RELATIONS_STAGING WHERE VALID = 1; ';
 
         return new Promise((resolve, reject) => {
             const sql = 'BEGIN TRANSACTION; ' +
                 updateExistingEntries +
                 addNewEntries +
+                removeMergedEntries +
                 'COMMIT;';
 
             execSql(sql, null, resolve, reject);
