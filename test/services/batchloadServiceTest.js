@@ -2,7 +2,10 @@ const createBatchloadService = require('../../server/services/batchloadService')
 const {expect, sandbox} = require('../testSetup');
 
 describe('batchloadService', () => {
-    let dbClient, nomisClient, nomisClientBuilder, service;
+    let dbClient;
+    let nomisClient;
+    let nomisClientBuilder;
+    let service;
 
     beforeEach(() => {
         dbClient = {
@@ -13,7 +16,7 @@ describe('batchloadService', () => {
             getPending: sandbox.stub().returnsPromise().resolves(
                 [{OFFENDER_NOMIS: {value: 'abc'}, STAFF_ID: {value: 'staffid'}, ID: {value: 'recordId'}}]
             ),
-            markRejected: sandbox.stub().returnsPromise().resolves(),
+            markFillRejected: sandbox.stub().returnsPromise().resolves(),
             markProcessed: sandbox.stub().returnsPromise().resolves()
         };
 
@@ -111,15 +114,15 @@ describe('batchloadService', () => {
 
             expect(dbClient.markProcessed).to.be.calledOnce();
             expect(dbClient.markProcessed).to.be.calledWith('recordId');
-            expect(dbClient.markRejected).to.not.be.called();
+            expect(dbClient.markFillRejected).to.not.be.called();
         });
 
         it('should mark unsuccessful posts with rejected', async () => {
-            nomisClient.postComRelation.rejects();
+            nomisClient.postComRelation.rejects({status: 400});
             await service.send();
 
-            expect(dbClient.markRejected).to.be.calledOnce();
-            expect(dbClient.markRejected).to.be.calledWith('recordId');
+            expect(dbClient.markFillRejected).to.be.calledOnce();
+            expect(dbClient.markFillRejected).to.be.calledWith('recordId');
             expect(dbClient.markProcessed).to.not.be.called();
         });
 
@@ -135,8 +138,8 @@ describe('batchloadService', () => {
             expect(dbClient.markProcessed).to.be.calledTwice();
             expect(dbClient.markProcessed).to.be.calledWith('recordId');
             expect(dbClient.markProcessed).to.be.calledWith('recordId3');
-            expect(dbClient.markRejected).to.be.calledOnce();
-            expect(dbClient.markRejected).to.be.calledWith('recordId2');
+            expect(dbClient.markFillRejected).to.be.calledOnce();
+            expect(dbClient.markFillRejected).to.be.calledWith('recordId2');
         });
     });
 });

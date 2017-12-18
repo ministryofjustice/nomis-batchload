@@ -68,7 +68,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 if(result.success) {
                     await dbClient.markProcessed(record.ID.value);
                 } else {
-                    await dbClient.markRejected(record.ID.value, result.message);
+                    await dbClient.markFillRejected(record.ID.value, result.message);
                 }
             }));
 

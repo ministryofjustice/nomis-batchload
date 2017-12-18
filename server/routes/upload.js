@@ -1,6 +1,8 @@
 const express = require('express');
 const asyncMiddleware = require('../utils/asyncMiddleware');
 
+const config = require('../config');
+
 module.exports = function({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}) {
     const router = express.Router();
     router.use(authenticationMiddleware());
@@ -44,13 +46,23 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         }
 
         try {
-            const result = await csvParser.parseCsv(datafile.data);
-            res.redirect('/?result=' + result);
+
+            await dbClient.clearStaged();
+            const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
+            res.redirect('/?result=' + insertedCount);
 
         } catch (error) {
             res.redirect('/?error=' + error);
         }
 
+    }));
+
+    router.get('/clearStaged', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /clearStaged');
+
+        await dbClient.clearStaged();
+
+        res.redirect('/');
     }));
 
     router.get('/fill', asyncMiddleware(async (req, res, next) => {
