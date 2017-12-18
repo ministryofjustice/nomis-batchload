@@ -9,28 +9,6 @@ const logger = require('../../log.js');
 
 module.exports = {
 
-    stageCaseload: function(offenderNomis, offenderPnc, staffId, valid) {
-
-        return new Promise((resolve, reject) => {
-            const sql = 'IF NOT EXISTS (SELECT * FROM OM_RELATIONS_STAGING WHERE ' +
-                'OFFENDER_NOMIS like @OFFENDER_NOMIS AND ' +
-                'OFFENDER_PNC like @OFFENDER_PNC AND ' +
-                'STAFF_ID like @STAFF_ID' + ') ' +
-                'BEGIN INSERT INTO OM_RELATIONS_STAGING ' +
-                '(OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, VALID) ' +
-                'VALUES (@OFFENDER_NOMIS, @OFFENDER_PNC, @STAFF_ID, @VALID) END';
-
-            const parameters = [
-                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: offenderNomis},
-                {column: 'OFFENDER_PNC', type: TYPES.VarChar, value: offenderPnc},
-                {column: 'STAFF_ID', type: TYPES.VarChar, value: staffId},
-                {column: 'VALID', type: TYPES.Bit, value: valid}
-            ];
-
-            execSql(sql, parameters, resolve, reject);
-        });
-    },
-
     clearStaged: function() {
         return new Promise((resolve, reject) => {
             const sql = `DELETE FROM OM_RELATIONS_STAGING`;

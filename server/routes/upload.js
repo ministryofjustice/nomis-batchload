@@ -46,6 +46,8 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         }
 
         try {
+
+            await dbClient.clearStaged();
             const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
             res.redirect('/?result=' + insertedCount);
 
