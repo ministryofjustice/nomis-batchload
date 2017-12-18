@@ -1,31 +1,31 @@
 const parse = require('csv-parse');
 
-
 module.exports = function(logger, dbClient, csvRowFormatter) {
-
 
     function parseCsv(data, columns, delimiter) {
 
-        return new Promise(function(resolve, reject) {
+        return new Promise(async function(resolve, reject) {
 
             const parserConfig = {columns: true, delimiter: delimiter, skip_empty_lines: true};
             const parser = parse(parserConfig);
 
-            parser.on('readable', function() {
-                let record;
-                while (record = parser.read()) {
-                    const selection = columns.map(column => record[column]);
-                    const {offenderNomis, offenderPnc, staffId, valid} = csvRowFormatter.format(selection);
-                    dbClient.stageCaseload(offenderNomis, offenderPnc, staffId, valid);
-                }
+            const {connection, bulkload} = await dbClient.getStageBulkload();
+
+            parser.on('data', record => {
+                const selection = columns.map(column => record[column]);
+                const {offenderNomis, offenderPnc, staffId, valid} = csvRowFormatter.format(selection);
+                bulkload.addRow(offenderNomis, offenderPnc, staffId, valid);
             });
 
             parser.on('error', function(err) {
+                logger.error('Error parsing CSV');
                 return reject(err.message);
             });
 
             parser.on('finish', function() {
-                return resolve(parser.lines);
+                const insertedCount = connection.execBulkLoad(bulkload);
+                logger.info('Bulk uploaded count: ' + insertedCount);
+                return resolve(insertedCount);
             });
 
             parser.write(data);

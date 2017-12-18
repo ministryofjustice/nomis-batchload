@@ -1,6 +1,10 @@
 const {getCollection, execSql} = require('./dataAccess/dbMethods');
 const TYPES = require('tedious').TYPES;
 
+const {
+    connect
+} = require('./dataAccess/db');
+
 const logger = require('../../log.js');
 
 module.exports = {
@@ -184,6 +188,34 @@ module.exports = {
                 'COMMIT;';
 
             execSql(sql, null, resolve, reject);
+        });
+    },
+
+    getStageBulkload: function() {
+        return new Promise((resolve, reject) => {
+            const connection = connect();
+
+            const bulkload = connection.newBulkLoad('OM_RELATIONS_STAGING', function(error, rowCount) {
+                if (error) {
+                    logger.error(error);
+                    return reject(error);
+                }
+
+                logger.info('inserted %d rows', rowCount);
+                return rowCount;
+            });
+
+            bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
+            bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
+            bulkload.addColumn('STAFF_ID', TYPES.NVarChar, {length: 50, nullable: true});
+            bulkload.addColumn('VALID', TYPES.Bit, {nullable: true});
+
+            connection.on('connect', error => {
+                if (error) {
+                    return reject(error);
+                }
+                return resolve({connection, bulkload});
+            });
         });
     }
 };
