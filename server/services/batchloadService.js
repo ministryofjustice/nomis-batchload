@@ -11,7 +11,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         try {
             const incomplete = await dbClient.getStagedIncomplete();
 
-            incomplete.forEach(async record => {
+            await Promise.all(incomplete.map(async record => {
                 const pnc = record.OFFENDER_PNC.value;
                 const result = await findNomisId(record.OFFENDER_PNC.value);
 
@@ -22,7 +22,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                     logger.warn('Did not find valid nomisID for pnc: ' + pnc);
                     await dbClient.markFillRejected(record.ID.value, result.message);
                 }
-            });
+            }));
 
         } catch (error) {
             logger.error('Error during fill: ', error.message);
@@ -58,7 +58,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         try {
             const pending = await dbClient.getPending();
 
-            pending.forEach(async record => {
+            await Promise.all(pending.map(async record => {
 
                 const nomisId = record.OFFENDER_NOMIS.value;
                 const staffId = record.STAFF_ID.value;
@@ -70,7 +70,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 } else {
                     await dbClient.markRejected(record.ID.value, result.message);
                 }
-            });
+            }));
 
         } catch (error) {
             logger.error('Error during send: ', error.message);
