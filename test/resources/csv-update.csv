@@ -1,7 +1,8 @@
-nomis1,pnc1,1
-,pnc2,1
-n,pnc3,1
-nomis4,pnc4,1
-nomis5,pnc5,1
-,pnc6,1
-,pnc7,1
+Active Offender Y/N, In Custody Y/N,CRN,PNC No,NOMS No,Staff Cd (OfM)
+Y,Y,crn,pnc1,nomis1,1
+Y,Y,crn,pnc2,,1
+Y,Y,crn,pnc3,n,1
+Y,Y,crn,pnc4,nomis4,1
+Y,Y,crn,pnc5,nomis5,1
+Y,Y,crn,pnc6,,1
+Y,Y,crn,pnc7,,1

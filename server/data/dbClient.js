@@ -27,6 +27,13 @@ module.exports = {
         });
     },
 
+    clearStaged: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `DELETE FROM OM_RELATIONS_STAGING`;
+            execSql(sql, [], resolve, reject);
+        });
+    },
+
     getPending: function() {
         return new Promise((resolve, reject) => {
             const sql = `SELECT * FROM OM_RELATIONS WHERE PENDING = 1`;

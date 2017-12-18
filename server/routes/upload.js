@@ -53,6 +53,14 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
     }));
 
+    router.get('/clearStaged', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /clearStaged');
+
+        await dbClient.clearStaged();
+
+        res.redirect('/');
+    }));
+
     router.get('/fill', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /fill');
 

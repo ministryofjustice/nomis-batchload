@@ -16,6 +16,15 @@ module.exports = {
 
     version: 0.1,
 
+    csv: {
+        columns: [
+            'NOMS No',
+            'PNC No',
+            'Staff Cd (OfM)'
+        ],
+        delimiter: ','
+    },
+
     db: {
         username: get('DB_USER', 'user'),
         password: get('DB_PASS', 'password'),

@@ -1,8 +1,10 @@
 const parse = require('csv-parse');
+const config = require('../config');
 
 module.exports = function(logger, dbClient, csvRowFormatter) {
 
-    const parserConfig = {delimiter: ',', skip_empty_lines: true};
+    const parserConfig = {columns: true, delimiter: config.csv.delimiter, skip_empty_lines: true};
+    const columns = config.csv.columns;
 
     function parseCsv(data) {
 
@@ -13,7 +15,8 @@ module.exports = function(logger, dbClient, csvRowFormatter) {
             parser.on('readable', function() {
                 let record;
                 while (record = parser.read()) {
-                    const {offenderNomis, offenderPnc, staffId, valid} = csvRowFormatter.format(record);
+                    const selection = columns.map(column => record[column]);
+                    const {offenderNomis, offenderPnc, staffId, valid} = csvRowFormatter.format(selection);
                     dbClient.stageCaseload(offenderNomis, offenderPnc, staffId, valid);
                 }
             });

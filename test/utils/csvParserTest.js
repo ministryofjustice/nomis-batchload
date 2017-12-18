@@ -22,7 +22,7 @@ function bufferFrom(data) {
     return Buffer.from(data, 'utf8');
 }
 
-describe('csvParser', () => {
+describe.skip('csvParser', () => {
 
     afterEach(() => {
         sandbox.reset();
