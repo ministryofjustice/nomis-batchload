@@ -67,7 +67,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         console.log('MERGE STAGING TO MASTER');
         try {
             await dbClient.merge();
-        } catch(err) {
+        } catch (err) {
             console.error(err);
         }
 
@@ -82,12 +82,28 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         res.redirect('/');
     }));
 
-    router.get('/downloadErrors', asyncMiddleware(async (req, res, next) => {
-        logger.info('GET /downloadErrors');
+    router.get('/viewIncomplete', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /viewIncomplete');
 
-        // todo
+        const incomplete = await dbClient.getStagedIncomplete();
 
-        res.redirect('/');
+        const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+        );
+
+        res.render('errorReport', {heading: 'Incomplete', report});
+    }));
+
+    router.get('/viewErrors', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /viewErrors');
+
+        const rejected = await dbClient.getRejected();
+
+        const report = rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+        );
+
+        res.render('errorReport', {heading: 'Nomis Rejections', report});
     }));
 
     return router;

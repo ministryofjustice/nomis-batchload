@@ -44,9 +44,11 @@ async function nomisGet(path, query, token, headers = {}) {
 
         return result.body;
 
-    } catch(exception) {
-        logger.error('Error from NOMIS: ' + exception);
-        throw exception;
+    } catch(error) {
+        logger.error('Error from NOMIS: ' + error);
+        logger.info(error.status);
+        logger.info(error.response.body);
+        throw error;
     }
 }
 
@@ -66,8 +68,10 @@ async function nomisPost(path, body, token, headers = {}) {
 
         return result.status;
 
-    } catch(exception) {
-        logger.error('Error from NOMIS: ' + exception);
-        throw exception;
+    } catch(error) {
+        logger.error('Error from NOMIS: ' + error);
+        logger.info(error.status);
+        logger.info(error.response.body);
+        throw error;
     }
 }
