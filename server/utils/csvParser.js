@@ -1,15 +1,14 @@
 const parse = require('csv-parse');
-const config = require('../config');
+
 
 module.exports = function(logger, dbClient, csvRowFormatter) {
 
-    const parserConfig = {columns: true, delimiter: config.csv.delimiter, skip_empty_lines: true};
-    const columns = config.csv.columns;
 
-    function parseCsv(data) {
+    function parseCsv(data, columns, delimiter) {
 
         return new Promise(function(resolve, reject) {
 
+            const parserConfig = {columns: true, delimiter: delimiter, skip_empty_lines: true};
             const parser = parse(parserConfig);
 
             parser.on('readable', function() {
