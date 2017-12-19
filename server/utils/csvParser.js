@@ -1,6 +1,6 @@
 const parse = require('csv-parse');
 
-module.exports = function(logger, dbClient, csvRowFormatter) {
+module.exports = function(logger, dbClient) {
 
     function parseCsv(data, columns, delimiter) {
 
@@ -13,8 +13,11 @@ module.exports = function(logger, dbClient, csvRowFormatter) {
 
             parser.on('data', record => {
                 const selection = columns.map(column => record[column]);
-                const {offenderNomis, offenderPnc, staffId, valid} = csvRowFormatter.format(selection);
-                bulkload.addRow(offenderNomis, offenderPnc, staffId, valid);
+                const data = selection.map(s => {
+                    const trimmed = s.trim();
+                    return trimmed.length > 0 ? trimmed : null;
+                });
+                bulkload.addRow(data[0], data[1], data[2]);
             });
 
             parser.on('error', function(err) {

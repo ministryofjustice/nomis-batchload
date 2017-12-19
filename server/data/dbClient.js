@@ -186,7 +186,6 @@ module.exports = {
             bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('STAFF_ID', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('VALID', TYPES.Bit, {nullable: true});
 
             connection.on('connect', error => {
                 if (error) {
