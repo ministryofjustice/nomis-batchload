@@ -1,5 +1,6 @@
 const logger = require('../../log.js');
-const async = require("async");
+
+const RateLimiter = require('limiter').RateLimiter;
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
@@ -41,15 +42,37 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     async function getNomisIds(pncs) {
         console.log('getNomisIds');
 
+        const nomisLimiter = new RateLimiter(1, 10000);
+
         return Promise.all(pncs.map(async p => {
             const pnc = p.OFFENDER_PNC.value;
-            return await findNomisId(pnc);
+            return await findNomisIdLimited(nomisLimiter, pnc);
         }));
     }
 
+    async function findNomisIdLimited(limiter, pnc) {
+
+        console.log('findNomisIdLimited');
+
+        return new Promise((resolve, reject) => {
+            limiter.removeTokens(1, async function(err, remainingRequests) {
+                console.log('limiter callback');
+
+                if (err) {
+                    return reject(err);
+                }
+                const result = await findNomisId(pnc);
+                return resolve(result);
+            });
+        });
+    }
+
+
     async function findNomisId(pnc) {
+
+        console.log('Looking for nomis id from api for: ' + pnc);
+
         try {
-            console.log('Looking for nomis id from api for: ' + pnc);
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
 
