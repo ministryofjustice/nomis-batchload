@@ -26,30 +26,41 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         console.log('start filling');
 
         const result = await dbClient.copyNomisIdsFromMaster();
-        console.log(result);
 
         const pncs = await dbClient.getPncs();
         console.log(pncs);
 
-        const pncToNomis = await getNomisIds(pncs.map(p => p.OFFENDER_PNC.value));
+        const pncToNomis = await getNomisIds(pncs);
         console.log(pncToNomis);
 
         const result2 = await fillNomisIdsFromNomis(pncToNomis);
-        console.log(result2);
 
         console.log('stop filling');
     }
 
     async function getNomisIds(pncs) {
         console.log('getNomisIds');
-        return {
-            'pnc6': {
-                id: 'nomis'
-            },
-            'pnc7': {
-                rejection: '404'
-            }
-        };
+
+        return Promise.all(pncs.map(async p => {
+            const pnc = p.OFFENDER_PNC.value;
+            return await findNomisId(pnc);
+        }));
+    }
+
+    async function findNomisId(pnc) {
+        try {
+            console.log('Looking for nomis id from api for: ' + pnc);
+            const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
+            return {pnc, id: nomisResult[0].offenderId};
+
+        } catch (error) {
+            logger.warn('Error looking up nomis ID: ' + error);
+            const status = error.status ? error.status : '0';
+            const errorMessage = error.response && error.response.body ? error.response.body : 'Unknown';
+            const rejection = status + ': ' + JSON.stringify(errorMessage);
+
+            return {pnc, rejection};
+        }
     }
 
     async function fillNomisIdsFromNomis(pncToNomis) {
@@ -57,12 +68,12 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
         const {connection, bulkload} = await dbClient.getApiResultsBulkload();
 
-        Object.keys(pncToNomis).forEach(pnc => {
-            const nomisId = pncToNomis[pnc].id || null;
-            const rejection = pncToNomis[pnc].rejection || null;
+        pncToNomis.forEach(result => {
+            const nomisId = result.id || null;
+            const rejection = result.rejection || null;
 
-            console.log(nomisId);
-            bulkload.addRow(pnc, nomisId, rejection);
+            console.log('addrow: ' + result.pnc + ' ' + nomisId + ' ' + rejection);
+            bulkload.addRow(result.pnc, nomisId, rejection);
         });
 
         await dbClient.deleteApiResults();
