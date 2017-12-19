@@ -80,13 +80,13 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
     router.get('/stopFill', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /stopFill');
-        console.log('todo - stop filling');
+        await batchloadService.stopFilling();
         res.redirect('/');
     }));
 
     router.get('/stopSend', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /stopSend');
-        console.log('todo - stop sending');
+        await batchloadService.stopSending();
         res.redirect('/');
     }));
 

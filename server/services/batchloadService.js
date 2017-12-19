@@ -14,8 +14,18 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return fillingState;
     }
 
+    async function stopFilling() {
+        console.log('stop filling');
+        fillingState = false;
+    }
+
     function isSending() {
         return sendingState;
+    }
+
+    async function stopSending() {
+        console.log('stop sending');
+        sendingState = false;
     }
 
     async function fill() {
@@ -27,6 +37,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         await dbClient.copyNomisIdsFromMaster();
 
         const pncs = await dbClient.getPncs();
+
         const pncToNomis = await getNomisIds(pncs);
 
         await fillNomisIds(pncToNomis);
@@ -40,7 +51,10 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return Promise.all(pncs.map(async p => {
             const pnc = p.OFFENDER_PNC.value;
             return await findNomisIdLimited(limiter, pnc);
-        }));
+        })).catch(err => {
+            logger.error('Error during getNomisIds promise all: ', err.message);
+            throw err;
+        });
     }
 
     async function findNomisIdLimited(limiter, pnc) {
@@ -50,12 +64,17 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 if (err) {
                     return reject(err);
                 }
+
+                if (!fillingState) {
+                    console.log('STOP filling');
+                    return resolve(null);
+                }
+
                 const result = await findNomisId(pnc);
                 return resolve(result);
             });
         });
     }
-
 
     async function findNomisId(pnc) {
         console.log('findNomisId for PNC: ' + pnc);
@@ -107,7 +126,10 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 const nomisId = record.OFFENDER_NOMIS.value;
                 const staffId = record.STAFF_ID.value;
                 return await updateNomisLimited(limiter, record.ID.value, nomisId, staffId);
-            }));
+            })).catch(err => {
+                logger.error('Error during startSending promise all: ', err.message);
+                throw err;
+            });
 
             sendingState = false;
 
@@ -124,6 +146,12 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
                 if (err) {
                     return reject(err);
                 }
+
+                if (!sendingState) {
+                    console.log('STOP sending');
+                    return reject('SENDING INTERRUPTED');
+                }
+
                 const result = await updateNomis(nomisId, staffId);
                 await dbClient.updateWithNomisResult(rowId, result.rejection);
                 return resolve();
@@ -145,5 +173,5 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         }
     }
 
-    return {fill, send, isFilling, isSending};
+    return {fill, send, isFilling, isSending, stopFilling, stopSending};
 };
