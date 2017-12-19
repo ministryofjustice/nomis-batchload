@@ -1,55 +1,75 @@
 const logger = require('../../log.js');
+const async = require("async");
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     const systemUserToken = 'todo';
     const nomisClient = nomisClientBuilder(systemUserToken);
 
-    async function fill() {
-        logger.info('filling missing nomis IDs');
+    let isFilling = false;
 
-        try {
-            const incomplete = await dbClient.getStagedIncomplete();
-
-            await Promise.all(incomplete.map(async record => {
-                const pnc = record.OFFENDER_PNC.value;
-                const result = await findNomisId(record.OFFENDER_PNC.value);
-
-                if (result.success) {
-                    logger.info('For pnc: ' + pnc + ' found nomisId: ' + result.id);
-                    await dbClient.fillNomisId(record.ID.value, result.id);
-                } else {
-                    logger.warn('Did not find valid nomisID for pnc: ' + pnc);
-                    await dbClient.markFillRejected(record.ID.value, result.message);
-                }
-            }));
-
-        } catch (error) {
-            logger.error('Error during fill: ', error.message);
-            throw error;
-        }
+    function getFilling() {
+        return isFilling;
     }
 
-    async function findNomisId(pnc) {
-        try {
+    async function fill() {
 
-            const masterResult = await dbClient.findNomisId(pnc);
+        fillingState = true;
 
-            if (masterResult.length > 0 && masterResult[0].OFFENDER_NOMIS.value) {
-                logger.info('Found nomisID already in master: ' + masterResult[0].OFFENDER_NOMIS.value);
-                return {success: true, id: masterResult[0].OFFENDER_NOMIS.value};
+        startFilling();
+
+        fillingState = false;
+    }
+
+    async function startFilling() {
+
+        console.log('start filling');
+
+        const result = await dbClient.copyNomisIdsFromMaster();
+        console.log(result);
+
+        const pncs = await dbClient.getPncs();
+        console.log(pncs);
+
+        const pncToNomis = await getNomisIds(pncs.map(p => p.OFFENDER_PNC.value));
+        console.log(pncToNomis);
+
+        const result2 = await fillNomisIdsFromNomis(pncToNomis);
+        console.log(result2);
+
+        console.log('stop filling');
+    }
+
+    async function getNomisIds(pncs) {
+        console.log('getNomisIds');
+        return {
+            'pnc6': {
+                id: 'nomis'
+            },
+            'pnc7': {
+                rejection: '404'
             }
+        };
+    }
 
-            const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
-            return {success: true, id: nomisResult[0].offenderId};
+    async function fillNomisIdsFromNomis(pncToNomis) {
+        console.log('fillNomisIds');
 
-        } catch(error) {
-            logger.warn('Error looking up nomis ID: ' + error);
-            const status = error.status ? error.status : '0';
-            const errorMessage = error.response && error.response.body ? error.response.body : 'Unknown';
-            const message = status + ': ' + JSON.stringify(errorMessage);
-            return {success: false, message};
-        }
+        const {connection, bulkload} = await dbClient.getApiResultsBulkload();
+
+        Object.keys(pncToNomis).forEach(pnc => {
+            const nomisId = pncToNomis[pnc].id || null;
+            const rejection = pncToNomis[pnc].rejection || null;
+
+            console.log(nomisId);
+            bulkload.addRow(pnc, nomisId, rejection);
+        });
+
+        await dbClient.deleteApiResults();
+        const insertedCount = connection.execBulkLoad(bulkload);
+        console.log(insertedCount);
+
+        await dbClient.mergeApiResults();
     }
 
     async function send() {
@@ -65,7 +85,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
                 const result = await updateNomis(nomisId, staffId);
 
-                if(result.success) {
+                if (result.success) {
                     await dbClient.markProcessed(record.ID.value);
                 } else {
                     await dbClient.markFillRejected(record.ID.value, result.message);
@@ -83,7 +103,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         try {
             await nomisClient.postComRelation(nomisId, staffId);
             return {success: true};
-        } catch(error) {
+        } catch (error) {
             logger.warn('Error updating nomis: ' + error);
             const status = error.status ? error.status : '0';
             const errorMessage = error.response && error.response.body ? error.response.body : 'Unknown';

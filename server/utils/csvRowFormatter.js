@@ -18,7 +18,7 @@ module.exports = {
     }
 };
 
-const emptyValue = '';
+const emptyValue = null;
 
 function validate(value, validator) {
     return validator(value) ? value : emptyValue;
