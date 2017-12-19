@@ -2,56 +2,56 @@ extends layout
 
 block content
 
-    h1.heading-large Upload caseload data
+    div.grid-row.paddingBottom
+        div.column-full
+            h1.heading-large Upload
+            div.column-full
+                form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
+                    input(type="hidden" name="_csrf" value=csrfToken)
+                    input(type="file" name="datafile")
+                    input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
 
-    form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
-        input(type="hidden" name="_csrf" value=csrfToken)
-        input(type="file" name="datafile")
-        input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
+                if (error)
+                    h1.heading-medium Upload Error
+                    div #{error}
 
-    if (error)
-        h1.heading-medium Upload Error
-        div #{error}
+        if(stagedIncomplete || staged)
+            div.column-full
+                h1.heading-large Staged
+                div.column-half
+                    p Missing nomis IDs: #{stagedIncomplete}
+                    if stagedIncomplete > 0
+                        if(isFilling)
+                            a.button(href="stopFill" role="button") Stop filling Nomis numbers
+                        else
+                            a.button(href="fill" role="button") Start filling Nomis numbers
+                        =" "
+                        a.button(href="viewIncomplete" role="button") View incomplete rows
 
-    if(stagedIncomplete || staged)
-        hr
-        h1.heading-large Staged caseload data
+                div.column-half
+                    p Ready to merge: #{staged}
+                    if staged > 0
+                        a.button(href="merge" role="button") Merge staging to master
+                    if staged > 0 || stagedIncomplete > 0
+                        ="  "
+                        a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
 
-            h1.heading-medium Missing nomis IDs
-            div #{stagedIncomplete}
+        if(pending || rejected)
+            div.column-full
+                h1.heading-large Pending
+                div.column-half
+                    p Rows to process #{pending}
+                    if pending > 0
+                        if(isFilling)
+                            p Wait for filling to complete
+                        else
+                            if(isSending)
+                                a.button(href="send" role="button") Stop sending to Nomis
+                            else
+                                a.button(href="stopSend" role="button") Start sending to Nomis
 
-            a.button(href="fill" role="button") Fill in Nomis numbers
+                div.column-half
+                    if rejected > 0
+                        p Rows that failed last time #{rejected}
+                        a.button(href="viewErrors" role="button") View failed rows
 
-            if stagedIncomplete > 0
-                =" "
-                a.button(href="viewIncomplete" role="button") View incomplete rows
-                br
-                br
-
-            h1.heading-medium Ready to merge
-            div #{staged}
-
-            a.button(href="merge" role="button") Merge staging to master
-            ="  "
-            a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
-            br
-            br
-
-    if(pending || rejected)
-        hr
-        h1.heading-large Pending caseload data
-
-            h1.heading-medium Rows to process
-            div #{pending}
-
-            a.button(href="send" role="button") Send to Nomis
-            br
-            br
-
-            if rejected > 0
-                h1.heading-medium Rows that failed last time
-                div #{rejected}
-
-                a.button(href="viewErrors" role="button") View failed rows
-                br
-                br

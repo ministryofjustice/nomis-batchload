@@ -22,13 +22,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         const pending = await dbClient.getPendingCount();
         const rejected = await dbClient.getRejectedCount();
 
+        const isFilling = batchloadService.isFilling();
+        const isSending = batchloadService.isSending();
+
         res.render('upload', {
             result: req.query.result,
             error: req.query.error,
             stagedIncomplete: stagedIncomplete[0].COUNT.value,
             staged: staged[0].COUNT.value,
             pending: pending[0].COUNT.value,
-            rejected: rejected[0].COUNT.value
+            rejected: rejected[0].COUNT.value,
+            isFilling,
+            isSending
         });
     }));
 
@@ -70,6 +75,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
         await batchloadService.fill();
 
+        res.redirect('/');
+    }));
+
+    router.get('/stopFill', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /stopFill');
+        console.log('todo - stop filling');
+        res.redirect('/');
+    }));
+
+    router.get('/stopSend', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /stopSend');
+        console.log('todo - stop sending');
         res.redirect('/');
     }));
 

@@ -1,7 +1,7 @@
 const createBatchloadService = require('../../server/services/batchloadService');
 const {expect, sandbox} = require('../testSetup');
 
-describe('batchloadService', () => {
+describe.skip('batchloadService', () => {
     let dbClient;
     let nomisClient;
     let nomisClientBuilder;

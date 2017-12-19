@@ -7,7 +7,6 @@ exports.up = knex =>
             table.string('OFFENDER_PNC', 50).nullable();
             table.string('STAFF_ID', 50).nullable();
             table.bit('PENDING').defaultTo(1);
-            table.bit('REJECTED').defaultTo(0);
             table.string('REJECTION', 250).nullable();
         })
     ]);
