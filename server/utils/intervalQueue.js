@@ -1,38 +1,39 @@
-module.exports = {
-    start,
-    stop
+module.exports = {IntervalQueue};
+
+function IntervalQueue(method, interval, finishedCallback) {
+    let timer;
+    this.method = method;
+    this.interval = interval;
+    this.finishedCallback = finishedCallback;
+
+    this.run = function(list, ) {
+        const [head, ...tail] = list;
+
+        try {
+            this.method(head);
+        } catch (err) {
+            // do something
+            console.error(err);
+        }
+
+        if(tail.length === 0) {
+            this.finishedCallback();
+            return;
+        }
+        this.timer = setTimeout(() => this.run(tail), this.interval);
+    };
+}
+
+IntervalQueue.prototype.start = function(list) {
+    if(list.length === 0) {
+        this.finishedCallback();
+        return;
+    }
+
+    this.run(list);
 };
 
-let timer;
-
-function start(list, method, interval, finishedCallback) {
-
-    if(list.length === 0) {
-        finishedCallback();
-        return;
-    }
-
-    run(list, method, interval, finishedCallback);
-}
-
-function run(list, method, interval, finishedCallback) {
-    const [head, ...tail] = list;
-
-    try {
-        method(head);
-    } catch (err) {
-        // do something
-        console.error(err);
-    }
-
-    if(tail.length === 0) {
-        finishedCallback();
-        return;
-    }
-    timer = setTimeout(() => run(tail, method, interval, finishedCallback), interval);
-}
-
-function stop() {
+IntervalQueue.prototype.stop = function() {
     console.log('STOP');
-    clearTimeout(timer);
-}
+    clearTimeout(this.timer);
+};

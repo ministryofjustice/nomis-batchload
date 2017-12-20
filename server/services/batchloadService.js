@@ -1,13 +1,14 @@
 const logger = require('../../log');
 const config = require('../config');
 const RateLimiter = require('limiter').RateLimiter;
-const intervalQueue = require('../utils/intervalQueue');
+const {IntervalQueue} = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     const systemUserToken = 'todo';
     const nomisClient = nomisClientBuilder(systemUserToken);
 
+    const intervalQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     let fillingState = false;
     let sendingState = false;
 
@@ -45,11 +46,11 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
         const pncs = await dbClient.getPncs();
 
-        intervalQueue.start(pncs, fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
+        intervalQueue.start(pncs);
     }
 
     async function fillNomisIdFromApi(pnc) {
-        const pncValue = pnc.OFFENDER_PNC.value
+        const pncValue = pnc.OFFENDER_PNC.value;
         console.log('QUEUED METHOD FIRED ', pncValue);
         const nomisId = await findNomisId(pncValue);
         await fillNomisId(nomisId);
