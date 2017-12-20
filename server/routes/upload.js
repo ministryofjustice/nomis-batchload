@@ -78,6 +78,12 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         res.redirect('/');
     }));
 
+    router.get('/filling', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /filling');
+        const isFilling = await batchloadService.isFilling();
+        res.json(isFilling);
+    }));
+
     router.get('/stopFill', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /stopFill');
         await batchloadService.stopFilling();

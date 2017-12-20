@@ -49,7 +49,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function fillNomisIdFromApi(pnc) {
-        const pncValue = pnc.OFFENDER_PNC.value
+        const pncValue = pnc.OFFENDER_PNC.value;
         console.log('QUEUED METHOD FIRED ', pncValue);
         const nomisId = await findNomisId(pncValue);
         await fillNomisId(nomisId);

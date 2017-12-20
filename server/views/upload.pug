@@ -22,9 +22,9 @@ block content
                     p Missing nomis IDs: #{stagedIncomplete}
                     if stagedIncomplete > 0
                         if(isFilling)
-                            a.button(href="stopFill" role="button") Stop filling Nomis numbers
+                            a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
                         else
-                            a.button(href="fill" role="button") Start filling Nomis numbers
+                            a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
                         =" "
                         a.button(href="viewIncomplete" role="button") View incomplete rows
 
@@ -55,3 +55,5 @@ block content
                         p Rows that failed last time #{rejected}
                         a.button(href="viewErrors" role="button") View failed rows
 
+block append scripts
+    script(src="/public/javascripts/activityStatePoll.js?"+version)
