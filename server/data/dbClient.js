@@ -81,23 +81,6 @@ module.exports = {
         });
     },
 
-    fillNomisId: function(recordId, nomisId) {
-        return new Promise((resolve, reject) => {
-            const sql =
-                'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = @OFFENDER_NOMIS, ' +
-                'REJECTION = null WHERE ID like @ID';
-
-            const parameters = [
-                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
-                {column: 'ID', type: TYPES.VarChar, value: recordId}
-            ];
-
-            logger.info('Filling nomis id for record ID: ' + recordId + ' using nomisId: ' + nomisId);
-
-            execSql(sql, parameters, resolve, reject);
-        });
-    },
-
     markFillRejected: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
             const sql =
@@ -188,33 +171,6 @@ module.exports = {
         });
     },
 
-    getApiResultsBulkload: function() {
-        return new Promise((resolve, reject) => {
-            const connection = connect();
-
-            const bulkload = connection.newBulkLoad('OM_RELATIONS_API_RESULT', function(error, rowCount) {
-                if (error) {
-                    logger.error(error);
-                    return reject(error);
-                }
-
-                logger.info('inserted %d rows', rowCount);
-                return rowCount;
-            });
-
-            bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('REJECTION', TYPES.NVarChar, {length: 250, nullable: true});
-
-            connection.on('connect', error => {
-                if (error) {
-                    return reject(error);
-                }
-                return resolve({connection, bulkload});
-            });
-        });
-    },
-
     copyNomisIdsFromMaster: function() {
         return new Promise((resolve, reject) => {
             const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = m.OFFENDER_NOMIS FROM OM_RELATIONS m ' +
@@ -231,20 +187,18 @@ module.exports = {
         });
     },
 
-    deleteApiResults: function() {
+    fillNomisId: function(pnc, nomisId, rejection) {
         return new Promise((resolve, reject) => {
-            const sql = `DELETE FROM OM_RELATIONS_API_RESULT`;
-            execSql(sql, [], resolve, reject);
-        });
-    },
+            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = ' +
+                '@OFFENDER_NOMIS, REJECTION = @REJECTION WHERE OFFENDER_PNC = @OFFENDER_PNC';
 
-    mergeApiResults: function() {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = a.OFFENDER_NOMIS, ' +
-                'REJECTION = a.REJECTION FROM OM_RELATIONS_API_RESULT a WHERE ' +
-                'a.OFFENDER_PNC = OM_RELATIONS_STAGING.OFFENDER_PNC';
+            const parameters = [
+                {column: 'OFFENDER_PNC', type: TYPES.VarChar, value: pnc},
+                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
+                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
+            ];
 
-            execSql(sql, [], resolve, reject);
+            execSql(sql, parameters, resolve, reject);
         });
     }
 };

@@ -1,6 +1,7 @@
 const logger = require('../../log');
 const config = require('../config');
 const RateLimiter = require('limiter').RateLimiter;
+const intervalQueue = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
@@ -16,6 +17,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     async function stopFilling() {
         console.log('stop filling');
+        intervalQueue.stop();
         fillingState = false;
     }
 
@@ -33,47 +35,24 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         startFilling();
     }
 
+    function fillingFinished() {
+        console.log('filling finished called');
+        fillingState = false;
+    }
+
     async function startFilling() {
         await dbClient.copyNomisIdsFromMaster();
 
         const pncs = await dbClient.getPncs();
 
-        const pncToNomis = await getNomisIds(pncs);
-
-        await fillNomisIds(pncToNomis);
-        fillingState = false;
+        intervalQueue.start(pncs, fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     }
 
-    async function getNomisIds(pncs) {
-        console.log('getNomisIds');
-        const limiter = new RateLimiter(1, config.nomis.getRateLimit);
-
-        return Promise.all(pncs.map(async p => {
-            const pnc = p.OFFENDER_PNC.value;
-            return await findNomisIdLimited(limiter, pnc);
-        })).catch(err => {
-            logger.error('Error during getNomisIds promise all: ', err.message);
-            throw err;
-        });
-    }
-
-    async function findNomisIdLimited(limiter, pnc) {
-        console.log('findNomisIdLimited');
-        return new Promise((resolve, reject) => {
-            limiter.removeTokens(1, async function(err, remainingRequests) {
-                if (err) {
-                    return reject(err);
-                }
-
-                if (!fillingState) {
-                    console.log('STOP filling');
-                    return resolve(null);
-                }
-
-                const result = await findNomisId(pnc);
-                return resolve(result);
-            });
-        });
+    async function fillNomisIdFromApi(pnc) {
+        const pncValue = pnc.OFFENDER_PNC.value
+        console.log('QUEUED METHOD FIRED ', pncValue);
+        const nomisId = await findNomisId(pncValue);
+        await fillNomisId(nomisId);
     }
 
     async function findNomisId(pnc) {
@@ -93,22 +72,12 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         }
     }
 
-    async function fillNomisIds(pncToNomis) {
-        console.log('fillNomisIds');
+    async function fillNomisId(result) {
+        console.log('fillNomisId');
+        const nomisId = result.id || null;
+        const rejection = result.rejection || null;
 
-        const {connection, bulkload} = await dbClient.getApiResultsBulkload();
-
-        pncToNomis.forEach(result => {
-            const nomisId = result.id || null;
-            const rejection = result.rejection || null;
-            bulkload.addRow(result.pnc, nomisId, rejection);
-        });
-
-        await dbClient.deleteApiResults();
-        const insertedCount = connection.execBulkLoad(bulkload);
-        console.log('fillNomisIds inserted: ' + insertedCount);
-
-        await dbClient.mergeApiResults();
+        await dbClient.fillNomisId(result.pnc, nomisId, rejection);
     }
 
     async function send() {
