@@ -81,22 +81,6 @@ module.exports = {
         });
     },
 
-    markFillRejected: function(recordId, rejection) {
-        return new Promise((resolve, reject) => {
-            const sql =
-                'UPDATE OM_RELATIONS_STAGING SET, REJECTION = @REJECTION WHERE ID like @ID';
-
-            const parameters = [
-                {column: 'ID', type: TYPES.VarChar, value: recordId},
-                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
-            ];
-
-            logger.info('Marking as rejected for record ID: ' + recordId);
-
-            execSql(sql, parameters, resolve, reject);
-        });
-    },
-
     updateWithNomisResult: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
             const sql = 'UPDATE OM_RELATIONS SET PENDING = 0, REJECTION = @REJECTION WHERE ID like @ID';

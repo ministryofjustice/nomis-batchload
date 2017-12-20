@@ -16,7 +16,6 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function stopFilling() {
-        console.log('stop filling');
         intervalQueue.stop();
         fillingState = false;
     }
@@ -26,7 +25,6 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function stopSending() {
-        console.log('stop sending');
         sendingState = false;
     }
 
@@ -36,28 +34,23 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     function fillingFinished() {
-        console.log('filling finished called');
         fillingState = false;
     }
 
     async function startFilling() {
         await dbClient.copyNomisIdsFromMaster();
-
         const pncs = await dbClient.getPncs();
-
         intervalQueue.start(pncs, fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     }
 
     async function fillNomisIdFromApi(pnc) {
         const pncValue = pnc.OFFENDER_PNC.value;
-        console.log('QUEUED METHOD FIRED ', pncValue);
         const nomisId = await findNomisId(pncValue);
         await fillNomisId(nomisId);
     }
 
     async function findNomisId(pnc) {
         console.log('findNomisId for PNC: ' + pnc);
-
         try {
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
