@@ -40,7 +40,7 @@ module.exports = {
             response: 2000,
             deadline: 2500
         },
-        getRateLimit: 10000,
+        getRateLimit: 1000,
         postRateLimit: 2000
     },
 
