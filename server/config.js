@@ -17,11 +17,13 @@ module.exports = {
     version: 0.1,
 
     csv: {
-        columns: [
-            'NOMS No',
-            'PNC No',
-            'Staff Cd (OfM)'
-        ],
+        columns: {
+            offenderNomis: 'NOMS No',
+            offenderPnc: 'PNC No',
+            staffId: 'Staff Cd (OfM)',
+            staffFirst: 'Staff First',
+            staffLast: 'Staff Last'
+        },
         delimiter: ','
     },
 

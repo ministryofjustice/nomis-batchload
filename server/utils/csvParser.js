@@ -13,13 +13,8 @@ module.exports = function(logger, dbClient) {
 
             let addedCount = 0;
 
-            parser.on('data', record => {
-                const selection = columns.map(column => record[column]);
-                const data = selection.map(s => {
-                    const trimmed = s.trim();
-                    return trimmed.length > 0 ? trimmed : null;
-                });
-                bulkload.addRow(data[0], data[1], data[2]);
+            parser.on('data', row => {
+                bulkload.addRow(formatRow(columns, row));
                 addedCount++;
             });
 
@@ -36,6 +31,26 @@ module.exports = function(logger, dbClient) {
             parser.write(data);
             parser.end();
         });
+    }
+
+    function formatRow(columns, row) {
+
+        const nomis = row[columns.offenderNomis];
+        const pnc = row[columns.offenderPnc];
+        const staffId = row[columns.staffId];
+        const staffFirst = nonemptyValueOrDefault(row[columns.staffFirst], staffId);
+        const staffLast = nonemptyValueOrDefault(row[columns.staffLast], staffId);
+
+        const record = [nomis, pnc, staffId, staffFirst, staffLast];
+
+        return record.map(s => {
+            const trimmed = s.trim();
+            return trimmed.length > 0 ? trimmed : null;
+        });
+    }
+
+    function nonemptyValueOrDefault(value, defaultValue) {
+         return value && value.length > 0 ? value : defaultValue;
     }
 
     return {parseCsv};

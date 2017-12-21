@@ -16,7 +16,7 @@ block content
                     div #{error}
 
         if(stagedIncomplete || staged)
-            div.column-full
+            div.column-full.paddingBottom
                 h1.heading-large Staged
                 div.column-half
                     p Incomplete records:
@@ -65,7 +65,7 @@ block content
                         span#rejectedCount #{rejected}
                     a.button(href="viewErrors" role="button") View failed rows
 
-        div.column-full
+        div.column-full.smallPaddingTop
             a(href="/audit") View activity record
 
 
