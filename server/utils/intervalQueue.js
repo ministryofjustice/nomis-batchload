@@ -37,3 +37,8 @@ IntervalQueue.prototype.stop = function() {
     console.log('STOP');
     clearTimeout(this.timer);
 };
+
+        return {start, stop};
+};
+
+

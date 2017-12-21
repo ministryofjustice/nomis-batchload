@@ -19,12 +19,14 @@ block content
             div.column-full
                 h1.heading-large Staged
                 div.column-half
-                    p Missing nomis IDs: #{stagedIncomplete}
+                    p Missing nomis IDs:
+                        =" "
+                        span#stagedIncompleteCount #{stagedIncomplete}
                     if stagedIncomplete > 0
                         if(isFilling)
-                            a.button(href="stopFill" role="button") Stop filling Nomis numbers
+                            a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
                         else
-                            a.button(href="fill" role="button") Start filling Nomis numbers
+                            a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
                         =" "
                         a.button(href="viewIncomplete" role="button") View incomplete rows
 
@@ -40,7 +42,9 @@ block content
             div.column-full
                 h1.heading-large Pending
                 div.column-half
-                    p Rows to process #{pending}
+                    p Rows to process
+                        =" "
+                        span#pendingCount #{pending}
                     if pending > 0
                         if(isFilling)
                             p Wait for filling to complete
@@ -51,7 +55,10 @@ block content
                                 a.button(href="send" role="button") Start sending to Nomis
 
                 div.column-half
-                    if rejected > 0
-                        p Rows that failed last time #{rejected}
-                        a.button(href="viewErrors" role="button") View failed rows
+                    p Rows that failed
+                        = " "
+                        span#rejectedCount #{rejected}
+                    a.button(href="viewErrors" role="button") View failed rows
 
+block append scripts
+    script(src="/public/javascripts/activityStatePoll.js?"+version)

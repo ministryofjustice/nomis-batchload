@@ -9,6 +9,9 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     const nomisClient = nomisClientBuilder(systemUserToken);
 
     const intervalQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
+    let fillingQueue;
+    let sendingQueue;
+
     let fillingState = false;
     let sendingState = false;
 
@@ -17,8 +20,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function stopFilling() {
-        console.log('stop filling');
-        intervalQueue.stop();
+        fillingQueue.stop();
         fillingState = false;
     }
 
@@ -27,7 +29,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function stopSending() {
-        console.log('stop sending');
+        sendingQueue.stop();
         sendingState = false;
     }
 
@@ -37,28 +39,26 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     function fillingFinished() {
-        console.log('filling finished called');
         fillingState = false;
     }
 
     async function startFilling() {
         await dbClient.copyNomisIdsFromMaster();
-
         const pncs = await dbClient.getPncs();
+        fillingQueue = new IntervalQueue();
+        fillingQueue.start(pncs, fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
 
         intervalQueue.start(pncs);
     }
 
     async function fillNomisIdFromApi(pnc) {
         const pncValue = pnc.OFFENDER_PNC.value;
-        console.log('QUEUED METHOD FIRED ', pncValue);
         const nomisId = await findNomisId(pncValue);
         await fillNomisId(nomisId);
     }
 
     async function findNomisId(pnc) {
         console.log('findNomisId for PNC: ' + pnc);
-
         try {
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
@@ -86,47 +86,25 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         startSending();
     }
 
-    async function startSending() {
-
-        try {
-            const pending = await dbClient.getPending();
-            const limiter = new RateLimiter(1, config.nomis.postRateLimit);
-
-            await Promise.all(pending.map(async record => {
-                const nomisId = record.OFFENDER_NOMIS.value;
-                const staffId = record.STAFF_ID.value;
-                return await updateNomisLimited(limiter, record.ID.value, nomisId, staffId);
-            })).catch(err => {
-                logger.error('Error during startSending promise all: ', err.message);
-                throw err;
-            });
-
-            sendingState = false;
-
-        } catch (error) {
-            logger.error('Error during send: ', error.message);
-            throw error;
-        }
+    function sendingFinished() {
+        sendingState = false;
     }
 
-    async function updateNomisLimited(limiter, rowId, nomisId, staffId) {
-        logger.info('updateNomisLimited');
-        return new Promise((resolve, reject) => {
-            limiter.removeTokens(1, async function(err, remainingRequests) {
-                if (err) {
-                    return reject(err);
-                }
+    async function startSending() {
+        console.log('start sending');
+        const pending = await dbClient.getPending();
+        sendingQueue = new IntervalQueue();
+        sendingQueue.start(pending, sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
+    }
 
-                if (!sendingState) {
-                    console.log('STOP sending');
-                    return reject('SENDING INTERRUPTED');
-                }
+    async function sendRelationToApi(record) {
+        console.log('sendRelationToApi');
+        const nomisId = record.OFFENDER_NOMIS.value;
+        const staffId = record.STAFF_ID.value;
+        const rowId = record.ID.value;
 
-                const result = await updateNomis(nomisId, staffId);
-                await dbClient.updateWithNomisResult(rowId, result.rejection);
-                return resolve();
-            });
-        });
+        const result = await updateNomis(nomisId, staffId);
+        await dbClient.updateWithNomisResult(rowId, result.rejection);
     }
 
     async function updateNomis(nomisId, staffId) {
