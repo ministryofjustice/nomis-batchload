@@ -3,7 +3,12 @@ const {execSql} = require('./dataAccess/dbMethods');
 const TYPES = require('tedious').TYPES;
 
 const keys = [
-    'UPLOAD_FILE'
+    'LOGIN',
+    'UPLOAD',
+    'CLEAR',
+    'FILL',
+    'MERGE',
+    'SEND'
 ];
 
 exports.record = function record(key, user, data) {

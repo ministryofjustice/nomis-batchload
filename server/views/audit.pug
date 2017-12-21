@@ -5,26 +5,22 @@ block content
     div.back-link-container
         a.link-back(href="/") Back
 
-    h1.heading-large #{heading}
+    h1.heading-large Activity Log
 
     table
         thead
             tr
-                th Row ID
                 th Timestamp
-                th Nomis
-                th PNC
-                th Staff ID
-                th Rejection
+                th User
+                th Action
+                th Info
         tbody
             each entry in report
                 tr
-                    td #{entry[0]}
-                    td #{moment(entry[1]).format('DD/MM/YYYY - hh:mm')}
+                    td #{moment(entry[0]).format('DD/MM/YYYY - hh:mm')}
+                    td #{entry[1]}
                     td #{entry[2]}
                     td #{entry[3]}
-                    td #{entry[4]}
-                    td #{entry[5]}
 
 
     br

@@ -27,6 +27,7 @@ const authenticationMiddleware = auth.authenticationMiddleware;
 
 const createSignInRouter = require('./routes/signIn');
 const createUploadRouter = require('../server/routes/upload');
+const createAuditRouter = require('../server/routes/audit');
 
 const version = moment.now().toString();
 const production = process.env.NODE_ENV === 'production';
@@ -211,6 +212,7 @@ module.exports = function createApp({
     });
 
     app.use('/', createUploadRouter({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}));
+    app.use('/audit', createAuditRouter({logger, dbClient, authenticationMiddleware}));
 
     // Error Handler
     app.use(function(req, res, next) {
