@@ -26,6 +26,8 @@ module.exports = {
             bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('STAFF_ID', TYPES.NVarChar, {length: 50, nullable: true});
+            bulkload.addColumn('STAFF_FIRST', TYPES.NVarChar, {length: 250, nullable: true});
+            bulkload.addColumn('STAFF_LAST', TYPES.NVarChar, {length: 250, nullable: true});
 
             connection.on('connect', error => {
                 if (error) {
@@ -113,8 +115,10 @@ module.exports = {
             'AND stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL; ';
 
-        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
-            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
+        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
+            'STAFF_FIRST, STAFF_LAST, PENDING) ' +
+            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
+            'STAFF_FIRST, STAFF_LAST, 1 ' +
             'FROM OM_RELATIONS_STAGING stage ' +
             'WHERE stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL ' +

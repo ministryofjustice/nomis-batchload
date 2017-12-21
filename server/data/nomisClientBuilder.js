@@ -20,9 +20,14 @@ module.exports = function(token) {
             return nomisGet(path, query, token);
         },
 
-        postComRelation: function(nomisId, staffId) {
-            const path = `${apiUrl}/offender-relationship/${nomisId}/COM`;
-            const body = {relationshipId: staffId, relationshipName: 'Offender Manager'};
+        postComRelation: function(nomisId, staffId, firstName, lastName) {
+            const path = `${apiUrl}/bookings/offenderNo/${nomisId}/relationships`;
+            const body = {
+                externalRef: staffId,
+                relationshipType: 'COM',
+                firstName,
+                lastName
+            };
             return nomisPost(path, body, token);
         }
     };
@@ -44,7 +49,7 @@ async function nomisGet(path, query, token, headers = {}) {
 
         return result.body;
 
-    } catch(error) {
+    } catch (error) {
         logger.error('Error from NOMIS: ' + error);
         logger.info(error.status);
         logger.info(error.response.body);
@@ -58,8 +63,8 @@ async function nomisPost(path, body, token, headers = {}) {
         const gwToken = `Bearer ${generateApiGatewayToken()}`;
 
         const result = await superagent
-        .post(path)
-        .send(body)
+            .post(path)
+            .send(body)
             .set('Accept', 'application/json')
             .set('Authorization', gwToken)
             .set('Elite-Authorization', token)
@@ -68,7 +73,7 @@ async function nomisPost(path, body, token, headers = {}) {
 
         return result.status;
 
-    } catch(error) {
+    } catch (error) {
         logger.error('Error from NOMIS: ' + error);
         logger.info(error.status);
         logger.info(error.response.body);

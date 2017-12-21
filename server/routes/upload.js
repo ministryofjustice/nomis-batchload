@@ -120,7 +120,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         const incomplete = await dbClient.getStagedIncomplete();
 
         const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.STAFF_FIRST.value, r.STAFF_LAST.value, r.REJECTION.value]
         );
 
         res.render('errorReport', {
@@ -136,10 +136,14 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         const rejected = await dbClient.getRejected();
 
         const report = rejected ? rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.STAFF_FIRST.value, r.STAFF_LAST.value, r.REJECTION.value]
         ) : [];
 
-        res.render('errorReport', {heading: 'Nomis Rejections', report});
+        res.render('errorReport', {
+            heading: 'Nomis Rejections',
+            report,
+            moment: require('moment')
+        });
     }));
 
     return router;

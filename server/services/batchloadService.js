@@ -95,16 +95,18 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         console.log('sendRelationToApi');
         const nomisId = record.OFFENDER_NOMIS.value;
         const staffId = record.STAFF_ID.value;
+        const first = record.STAFF_FIRST.value;
+        const last = record.STAFF_LAST.value;
         const rowId = record.ID.value;
 
-        const result = await updateNomis(nomisId, staffId);
+        const result = await updateNomis(nomisId, staffId, first, last);
         await dbClient.updateWithNomisResult(rowId, result.rejection);
     }
 
-    async function updateNomis(nomisId, staffId) {
-        console.log('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
+    async function updateNomis(nomisId, staffId, first, last) {
+        logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
-            await nomisClient.postComRelation(nomisId, staffId);
+            await nomisClient.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {
             logger.warn('Error updating nomis: ' + error);
