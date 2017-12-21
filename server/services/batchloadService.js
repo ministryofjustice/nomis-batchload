@@ -1,6 +1,5 @@
 const logger = require('../../log');
 const config = require('../config');
-const RateLimiter = require('limiter').RateLimiter;
 const {IntervalQueue} = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
@@ -8,9 +7,8 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     const systemUserToken = 'todo';
     const nomisClient = nomisClientBuilder(systemUserToken);
 
-    const intervalQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
-    let fillingQueue;
-    let sendingQueue;
+    const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
+    const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
 
     let fillingState = false;
     let sendingState = false;
@@ -44,11 +42,8 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     async function startFilling() {
         await dbClient.copyNomisIdsFromMaster();
-        const pncs = await dbClient.getPncs();
-        fillingQueue = new IntervalQueue();
-        fillingQueue.start(pncs, fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
-
-        intervalQueue.start(pncs);
+        const pncs = await dbClient.getStagedPncs();
+        fillingQueue.start(pncs);
     }
 
     async function fillNomisIdFromApi(pnc) {
@@ -93,8 +88,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     async function startSending() {
         console.log('start sending');
         const pending = await dbClient.getPending();
-        sendingQueue = new IntervalQueue();
-        sendingQueue.start(pending, sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
+        sendingQueue.start(pending);
     }
 
     async function sendRelationToApi(record) {

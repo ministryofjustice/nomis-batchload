@@ -31,7 +31,9 @@ block content
                         a.button(href="viewIncomplete" role="button") View incomplete rows
 
                 div.column-half
-                    p Ready to merge: #{staged}
+                    p Ready to merge:
+                        =" "
+                        span#stagedCount  #{staged}
                     if staged > 0
                         a.button(href="merge" role="button") Merge staging to master
                     if staged > 0 || stagedIncomplete > 0

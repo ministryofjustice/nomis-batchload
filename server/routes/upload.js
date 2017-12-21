@@ -39,7 +39,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
             rejected: rejected[0].COUNT.value,
             isFilling,
             isSending
-        }
+        };
     }
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
@@ -106,7 +106,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
         console.log('MERGE STAGING TO MASTER');
         try {
-            await dbClient.merge();
+            await dbClient.mergeStageToMaster();
         } catch (err) {
             console.error(err);
         }

@@ -1,12 +1,12 @@
 module.exports = {IntervalQueue};
 
 function IntervalQueue(method, interval, finishedCallback) {
-    let timer;
+    let timer; // eslint-disable-line no-unused-vars
     this.method = method;
     this.interval = interval;
     this.finishedCallback = finishedCallback;
 
-    this.run = function(list, ) {
+    this.run = function(list) {
         const [head, ...tail] = list;
 
         try {
@@ -37,8 +37,3 @@ IntervalQueue.prototype.stop = function() {
     console.log('STOP');
     clearTimeout(this.timer);
 };
-
-        return {start, stop};
-};
-
-
