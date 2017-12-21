@@ -23,12 +23,15 @@ block content
                         =" "
                         span#stagedIncompleteCount #{stagedIncomplete}
                     if stagedIncomplete > 0
-                        if(isFilling)
-                            a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
+                        if(isSending)
+                            p Wait for filling to complete
                         else
-                            a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
-                        =" "
-                        a.button(href="viewIncomplete" role="button") View incomplete rows
+                            if(isFilling)
+                                a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
+                            else
+                                a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
+                            =" "
+                            a.button(href="viewIncomplete" role="button") View incomplete rows
 
                 div.column-half
                     p Ready to merge:
