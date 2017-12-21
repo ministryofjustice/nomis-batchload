@@ -17,20 +17,30 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
     router.get('/', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /upload');
 
+        const resultData = {result: req.query.result, error: req.query.error};
+        const activityData = await getActivityStateData();
+
+        res.render('upload', {...resultData, ...activityData});
+    }));
+
+    async function getActivityStateData() {
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
         const staged = await dbClient.getStagedCount();
         const pending = await dbClient.getPendingCount();
         const rejected = await dbClient.getRejectedCount();
 
-        res.render('upload', {
-            result: req.query.result,
-            error: req.query.error,
+        const isFilling = batchloadService.isFilling();
+        const isSending = batchloadService.isSending();
+
+        return {
             stagedIncomplete: stagedIncomplete[0].COUNT.value,
             staged: staged[0].COUNT.value,
             pending: pending[0].COUNT.value,
-            rejected: rejected[0].COUNT.value
-        });
-    }));
+            rejected: rejected[0].COUNT.value,
+            isFilling,
+            isSending
+        }
+    }
 
     router.post('/', asyncMiddleware(async (req, res, next) => {
         logger.info('POST /upload');
@@ -73,6 +83,24 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         res.redirect('/');
     }));
 
+    router.get('/activityStatus', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /activityStatus');
+        const activityData = await getActivityStateData();
+        res.status(200).json(activityData);
+    }));
+
+    router.get('/stopFill', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /stopFill');
+        await batchloadService.stopFilling();
+        res.redirect('/');
+    }));
+
+    router.get('/stopSend', asyncMiddleware(async (req, res, next) => {
+        logger.info('GET /stopSend');
+        await batchloadService.stopSending();
+        res.redirect('/');
+    }));
+
     router.get('/merge', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /merge');
 
@@ -111,9 +139,9 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
         const rejected = await dbClient.getRejected();
 
-        const report = rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+        const report = rejected? rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
             r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
-        );
+        ) : [];
 
         res.render('errorReport', {heading: 'Nomis Rejections', report});
     }));
