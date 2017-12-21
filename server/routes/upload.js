@@ -1,7 +1,7 @@
 const express = require('express');
 const asyncMiddleware = require('../utils/asyncMiddleware');
-
 const config = require('../config');
+const audit = require('../data/audit');
 
 module.exports = function({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}) {
     const router = express.Router();
@@ -16,9 +16,9 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
     router.get('/', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /upload');
-        const resultData = {result: req.query.result, error: req.query.error};
+        const error = {error: req.query.error};
         const activityData = await getActivityStateData();
-        res.render('upload', {...resultData, ...activityData});
+        res.render('upload', {...error, ...activityData});
     }));
 
     async function getActivityStateData() {
@@ -62,7 +62,8 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         try {
             await dbClient.clearStaged();
             const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
-            res.redirect('/?result=' + insertedCount);
+            audit.record('UPLOAD', req.user.email, {rows: insertedCount});
+            res.redirect('/');
 
         } catch (error) {
             res.redirect('/?error=' + error);
@@ -71,6 +72,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
     router.get('/clearStaged', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /clearStaged');
+        audit.record('CLEAR', req.user.email);
         await dbClient.clearStaged();
         res.redirect('/');
     }));
@@ -78,6 +80,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
     router.get('/fill', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /fill');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
+            audit.record('FILL', req.user.email);
             await batchloadService.fill();
         }
         res.redirect('/');
@@ -91,6 +94,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
 
     router.get('/merge', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /merge');
+        audit.record('MERGE', req.user.email);
         await dbClient.mergeStageToMaster();
         res.redirect('/');
     }));
@@ -98,6 +102,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
     router.get('/send', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /send');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
+            audit.record('SEND', req.user.email);
             await batchloadService.send();
         }
         res.redirect('/');

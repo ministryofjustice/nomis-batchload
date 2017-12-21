@@ -176,5 +176,12 @@ module.exports = {
             const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTION IS NOT NULL`;
             getCollection(sql, null, resolve, reject);
         });
+    },
+
+    getAudit: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM AUDIT`;
+            getCollection(sql, null, resolve, reject);
+        });
     }
 };

@@ -11,6 +11,8 @@ module.exports = function(logger, dbClient) {
 
             const {connection, bulkload} = await dbClient.getStageBulkload();
 
+            let addedCount = 0;
+
             parser.on('data', record => {
                 const selection = columns.map(column => record[column]);
                 const data = selection.map(s => {
@@ -18,6 +20,7 @@ module.exports = function(logger, dbClient) {
                     return trimmed.length > 0 ? trimmed : null;
                 });
                 bulkload.addRow(data[0], data[1], data[2]);
+                addedCount++;
             });
 
             parser.on('error', function(err) {
@@ -26,9 +29,8 @@ module.exports = function(logger, dbClient) {
             });
 
             parser.on('finish', function() {
-                const insertedCount = connection.execBulkLoad(bulkload);
-                logger.info('Bulk uploaded count: ' + insertedCount);
-                return resolve(insertedCount);
+                connection.execBulkLoad(bulkload);
+                return resolve(addedCount);
             });
 
             parser.write(data);

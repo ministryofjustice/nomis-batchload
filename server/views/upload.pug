@@ -44,7 +44,7 @@ block content
                         a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
 
         if(pending || rejected)
-            div.column-full
+            div.column-full.paddingBottom
                 h1.heading-large Pending
                 div.column-half
                     p Ready to submit:
@@ -64,6 +64,10 @@ block content
                         = " "
                         span#rejectedCount #{rejected}
                     a.button(href="viewErrors" role="button") View failed rows
+
+        div.column-full
+            a(href="/audit") View activity record
+
 
 block append scripts
     script(src="/public/javascripts/activityStatePoll.js?"+version)
