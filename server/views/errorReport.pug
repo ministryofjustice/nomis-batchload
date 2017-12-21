@@ -20,7 +20,7 @@ block content
             each entry in report
                 tr
                     td #{entry[0]}
-                    td #{entry[1]}
+                    td #{moment(entry[1]).format('DD/MM/YYYY - hh:mm')}
                     td #{entry[2]}
                     td #{entry[3]}
                     td #{entry[4]}

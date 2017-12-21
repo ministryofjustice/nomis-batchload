@@ -118,7 +118,11 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
             r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
         );
 
-        res.render('errorReport', {heading: 'Incomplete', report});
+        res.render('errorReport', {
+            heading: 'Incomplete',
+            report,
+            moment: require('moment')
+        });
     }));
 
     router.get('/viewErrors', asyncMiddleware(async (req, res, next) => {

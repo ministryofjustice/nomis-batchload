@@ -19,7 +19,7 @@ block content
             div.column-full
                 h1.heading-large Staged
                 div.column-half
-                    p Missing nomis IDs:
+                    p Incomplete records:
                         =" "
                         span#stagedIncompleteCount #{stagedIncomplete}
                     if stagedIncomplete > 0
@@ -31,7 +31,7 @@ block content
                             else
                                 a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
                             =" "
-                            a.button(href="viewIncomplete" role="button") View incomplete rows
+                            a.button(href="viewIncomplete" role="button") View incomplete records
 
                 div.column-half
                     p Ready to merge:
@@ -47,7 +47,7 @@ block content
             div.column-full
                 h1.heading-large Pending
                 div.column-half
-                    p Rows to process
+                    p Ready to submit:
                         =" "
                         span#pendingCount #{pending}
                     if pending > 0
@@ -60,7 +60,7 @@ block content
                                 a.button(href="send" role="button") Start sending to Nomis
 
                 div.column-half
-                    p Rows that failed
+                    p Submission errors:
                         = " "
                         span#rejectedCount #{rejected}
                     a.button(href="viewErrors" role="button") View failed rows

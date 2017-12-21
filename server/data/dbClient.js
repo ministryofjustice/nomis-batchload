@@ -45,16 +45,14 @@ module.exports = {
 
     getStagedIncomplete: function() {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
-                'AND OFFENDER_PNC IS NOT NULL ORDER BY ID';
+            const sql = 'SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ORDER BY ID';
             getCollection(sql, null, resolve, reject);
         });
     },
 
     getStagedIncompleteCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
-                ' AND OFFENDER_PNC IS NOT NULL';
+            const sql = 'SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL';
             getCollection(sql, null, resolve, reject);
         });
     },
@@ -75,7 +73,8 @@ module.exports = {
 
     getStagedPncs: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT OFFENDER_PNC FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL`;
+            const sql = 'SELECT OFFENDER_PNC FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
+                'AND OFFENDER_PNC IS NOT NULL';
             getCollection(sql, null, resolve, reject);
         });
     },
