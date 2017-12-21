@@ -14,4 +14,5 @@ function updatePage(activityData) {
     $('#stagedIncompleteCount').text(activityData.stagedIncomplete);
     $('#pendingCount').text(activityData.pending);
     $('#rejectedCount').text(activityData.rejected);
+    $('#stagedCount').text(activityData.staged);
 }

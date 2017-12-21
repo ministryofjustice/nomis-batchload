@@ -1,40 +1,39 @@
-module.exports = function () {
+module.exports = {IntervalQueue};
 
-        let timer;
+function IntervalQueue(method, interval, finishedCallback) {
+    let timer; // eslint-disable-line no-unused-vars
+    this.method = method;
+    this.interval = interval;
+    this.finishedCallback = finishedCallback;
 
-        function start(list, method, interval, finishedCallback) {
+    this.run = function(list) {
+        const [head, ...tail] = list;
 
-            if(list.length === 0) {
-                finishedCallback();
-                return;
-            }
-
-            run(list, method, interval, finishedCallback);
+        try {
+            this.method(head);
+        } catch (err) {
+            // do something
+            console.error(err);
         }
 
-        function run(list, method, interval, finishedCallback) {
-            const [head, ...tail] = list;
-
-            try {
-                method(head);
-            } catch (err) {
-                // do something
-                console.error(err);
-            }
-
-            if(tail.length === 0) {
-                finishedCallback();
-                return;
-            }
-            timer = setTimeout(() => run(tail, method, interval, finishedCallback), interval);
+        if(tail.length === 0) {
+            this.finishedCallback();
+            return;
         }
+        this.timer = setTimeout(() => this.run(tail), this.interval);
+    };
+}
 
-        function stop() {
-            console.log('STOP');
-            clearTimeout(timer);
-        }
+IntervalQueue.prototype.start = function(list) {
+    if(list.length === 0) {
+        this.finishedCallback();
+        return;
+    }
 
-        return {start, stop};
+    this.run(list);
 };
 
-
+IntervalQueue.prototype.stop = function() {
+    console.log('STOP');
+    clearTimeout(this.timer);
+};
