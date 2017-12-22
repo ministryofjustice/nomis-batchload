@@ -4,69 +4,74 @@ block content
 
     div.grid-row.paddingBottom
         div.column-full
-            h1.heading-large Upload
-            div.column-full
+            div.column-half
+                h1.heading-large Upload
                 form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
                     input(type="hidden" name="_csrf" value=csrfToken)
                     input(type="file" name="datafile")
-                    input#continueBtn.requiredButton.button.midMarginBottom(type="submit" value="Upload")
+                    input#continueBtn.requiredButton.button(type="submit" value="Upload")
 
                 if (error)
                     h1.heading-medium Upload Error
                     div #{error}
 
-        if(stagedIncomplete || staged)
-            div.column-full.paddingBottom
-                h1.heading-large Staged
-                div.column-half
-                    p Incomplete records:
-                        =" "
-                        span#stagedIncompleteCount #{stagedIncomplete}
-                    if stagedIncomplete > 0
-                        if(isSending)
-                            p Wait for filling to complete
+        div.column-full
+            div.column-half
+                h1.heading-large Prepare
+                p Incomplete records:
+                    =" "
+                    span#stagedIncompleteCount #{stagedIncomplete}
+                if stagedIncomplete > 0
+                    if(isSending)
+                        p Wait for filling to complete
+                    else
+                        if(isFilling)
+                            a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
                         else
-                            if(isFilling)
-                                a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
-                            else
-                                a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
-                            =" "
-                            a.button(href="viewIncomplete" role="button") View incomplete records
-
-                div.column-half
-                    p Ready to merge:
+                            a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
                         =" "
-                        span#stagedCount  #{staged}
+                        a.button.button-secondary(href="viewIncomplete" role="button") View incomplete records
+
+            div.column-half
+                h1.heading-large Merge
+                p Ready to merge:
+                    =" "
+                    span#stagedCount  #{staged}
+                if(isSending || isFilling)
+                    p Wait for filling/sending to complete
+                else
                     if staged > 0
                         a.button(href="merge" role="button") Merge staging to master
-                    if staged > 0 || stagedIncomplete > 0
-                        ="  "
-                        a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
 
-        if(pending || rejected)
-            div.column-full.paddingBottom
-                h1.heading-large Pending
-                div.column-half
-                    p Ready to submit:
-                        =" "
-                        span#pendingCount #{pending}
-                    if pending > 0
-                        if(isFilling)
-                            p Wait for filling to complete
+        div.column-full
+            div.column-half
+                h1.heading-large Submit
+                p Untried rows:
+                    =" "
+                    span#pendingCount #{pending}
+                p Rows with errors:
+                    =" "
+                    span#rejectedCount #{rejected}
+                if (pending > 0 || rejected > 0)
+                    if(isFilling)
+                        p Wait for filling to complete
+                    else
+                        if(isSending)
+                            a.button(href="stopSend" role="button") Stop sending to Nomis
                         else
-                            if(isSending)
-                                a.button(href="stopSend" role="button") Stop sending to Nomis
-                            else
-                                a.button(href="send" role="button") Start sending to Nomis
+                            a.button(href="send" role="button") Start sending to Nomis
+                    =" "
+                    a.button.button-secondary(href="viewErrors" role="button") View rows with errors
 
+        div.column-full
                 div.column-half
-                    p Submission errors:
-                        = " "
-                        span#rejectedCount #{rejected}
-                    a.button(href="viewErrors" role="button") View failed rows
-
-        div.column-full.smallPaddingTop
-            a(href="/audit") View activity record
+                    h1.heading-large Admin
+                    if(isSending || isFilling)
+                        p Wait for filling/sending to complete
+                    else if staged > 0 || stagedIncomplete > 0
+                        a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
+                    ="  "
+                    a.button.button-secondary(href="/audit" role="button") View activity record
 
 
 block append scripts
