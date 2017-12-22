@@ -1,5 +1,4 @@
 const express = require('express');
-const asyncMiddleware = require('../utils/asyncMiddleware');
 
 const config = require('../config');
 
@@ -14,14 +13,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         next();
     });
 
-    router.get('/', asyncMiddleware(async (req, res, next) => {
+    router.get('/', async (req, res, next) => {
         logger.info('GET /upload');
 
-        const resultData = {result: req.query.result, error: req.query.error};
-        const activityData = await getActivityStateData();
+        try {
+            const resultData = {result: req.query.result, error: req.query.error};
+            const activityData = await getActivityStateData();
 
-        res.render('upload', {...resultData, ...activityData});
-    }));
+            res.render('upload', {...resultData, ...activityData});
+        } catch(error) {
+            res.redirect('/?error=' + error);
+        }
+    });
 
     async function getActivityStateData() {
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
@@ -42,7 +45,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         };
     }
 
-    router.post('/', asyncMiddleware(async (req, res, next) => {
+    router.post('/', async (req, res, next) => {
         logger.info('POST /upload');
 
         if (!req.files || !req.files.datafile) {
@@ -65,43 +68,52 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
             res.redirect('/?error=' + error);
         }
 
-    }));
+    });
 
-    router.get('/clearStaged', asyncMiddleware(async (req, res, next) => {
+    router.get('/clearStaged', async (req, res, next) => {
         logger.info('GET /clearStaged');
+        try {
+            await dbClient.clearStaged();
 
-        await dbClient.clearStaged();
+            res.redirect('/');
+        } catch(error) {
+            res.redirect('/?error=' + error);
+        }
+    });
 
-        res.redirect('/');
-    }));
-
-    router.get('/fill', asyncMiddleware(async (req, res, next) => {
+    router.get('/fill', async (req, res, next) => {
         logger.info('GET /fill');
+        try {
+            await batchloadService.fill();
+            res.redirect('/');
+        } catch (error) {
+            res.redirect('/?error=' + error);
+        }
+    });
 
-        await batchloadService.fill();
-
-        res.redirect('/');
-    }));
-
-    router.get('/activityStatus', asyncMiddleware(async (req, res, next) => {
+    router.get('/activityStatus', async (req, res, next) => {
         logger.info('GET /activityStatus');
-        const activityData = await getActivityStateData();
-        res.status(200).json(activityData);
-    }));
+        try {
+            const activityData = await getActivityStateData();
+            res.status(200).json(activityData);
+        } catch(error) {
+            res.status(500).json({error});
+        }
+    });
 
-    router.get('/stopFill', asyncMiddleware(async (req, res, next) => {
+    router.get('/stopFill', (req, res, next) => {
         logger.info('GET /stopFill');
-        await batchloadService.stopFilling();
+        batchloadService.stopFilling();
         res.redirect('/');
-    }));
+    });
 
-    router.get('/stopSend', asyncMiddleware(async (req, res, next) => {
+    router.get('/stopSend', (req, res, next) => {
         logger.info('GET /stopSend');
-        await batchloadService.stopSending();
+        batchloadService.stopSending();
         res.redirect('/');
-    }));
+    });
 
-    router.get('/merge', asyncMiddleware(async (req, res, next) => {
+    router.get('/merge', async (req, res, next) => {
         logger.info('GET /merge');
 
         console.log('MERGE STAGING TO MASTER');
@@ -112,39 +124,48 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, authen
         }
 
         res.redirect('/');
-    }));
+    });
 
-    router.get('/send', asyncMiddleware(async (req, res, next) => {
+    router.get('/send', async (req, res, next) => {
         logger.info('GET /send');
 
         await batchloadService.send();
 
         res.redirect('/');
-    }));
+    });
 
-    router.get('/viewIncomplete', asyncMiddleware(async (req, res, next) => {
+    router.get('/viewIncomplete', async (req, res, next) => {
         logger.info('GET /viewIncomplete');
 
-        const incomplete = await dbClient.getStagedIncomplete();
+        try {
+            const incomplete = await dbClient.getStagedIncomplete();
 
-        const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
-        );
+            const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+                r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+            );
 
-        res.render('errorReport', {heading: 'Incomplete', report});
-    }));
+            res.render('errorReport', {heading: 'Incomplete', report});
+        } catch(error) {
+            res.redirect('/?error=' + error);
+        }
 
-    router.get('/viewErrors', asyncMiddleware(async (req, res, next) => {
+    });
+
+    router.get('/viewErrors', async (req, res, next) => {
         logger.info('GET /viewErrors');
 
-        const rejected = await dbClient.getRejected();
+        try {
+            const rejected = await dbClient.getRejected();
 
-        const report = rejected? rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-            r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
-        ) : [];
+            const report = rejected? rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
+                r.OFFENDER_PNC.value, r.STAFF_ID.value, r.REJECTION.value]
+            ) : [];
 
-        res.render('errorReport', {heading: 'Nomis Rejections', report});
-    }));
+            res.render('errorReport', {heading: 'Nomis Rejections', report});
+        } catch(error) {
+            res.redirect('/?error=' + error);
+        }
+    });
 
     return router;
 };

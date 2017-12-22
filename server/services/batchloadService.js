@@ -17,7 +17,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return fillingState;
     }
 
-    async function stopFilling() {
+    function stopFilling() {
         fillingQueue.stop();
         fillingState = false;
     }
@@ -26,14 +26,14 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return sendingState;
     }
 
-    async function stopSending() {
+    function stopSending() {
         sendingQueue.stop();
         sendingState = false;
     }
 
     async function fill() {
         fillingState = true;
-        startFilling();
+        await startFilling();
     }
 
     function fillingFinished() {

@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const nock = require('nock');
 const bodyParser = require('body-parser');
+const fileUpload = require('express-fileupload');
 
 const {
     expect,
@@ -33,6 +34,7 @@ module.exports = {
         });
         app.use(bodyParser.json());
         app.use(bodyParser.urlencoded({extended: false}));
+        app.use(fileUpload());
         app.use(route);
         app.set('views', path.join(__dirname, '../server/views'));
         app.set('view engine', 'pug');
