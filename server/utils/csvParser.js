@@ -11,13 +11,11 @@ module.exports = function(logger, dbClient) {
 
             const {connection, bulkload} = await dbClient.getStageBulkload();
 
-            parser.on('data', record => {
-                const selection = columns.map(column => record[column]);
-                const data = selection.map(s => {
-                    const trimmed = s.trim();
-                    return trimmed.length > 0 ? trimmed : null;
-                });
-                bulkload.addRow(data[0], data[1], data[2]);
+            let addedCount = 0;
+
+            parser.on('data', row => {
+                bulkload.addRow(formatRow(columns, row));
+                addedCount++;
             });
 
             parser.on('error', function(err) {
@@ -26,14 +24,33 @@ module.exports = function(logger, dbClient) {
             });
 
             parser.on('finish', function() {
-                const insertedCount = connection.execBulkLoad(bulkload);
-                logger.info('Bulk uploaded count: ' + insertedCount);
-                return resolve(insertedCount);
+                connection.execBulkLoad(bulkload);
+                return resolve(addedCount);
             });
 
             parser.write(data);
             parser.end();
         });
+    }
+
+    function formatRow(columns, row) {
+
+        const nomis = row[columns.offenderNomis];
+        const pnc = row[columns.offenderPnc];
+        const staffId = row[columns.staffId];
+        const staffFirst = nonemptyValueOrDefault(row[columns.staffFirst], staffId);
+        const staffLast = nonemptyValueOrDefault(row[columns.staffLast], staffId);
+
+        const record = [nomis, pnc, staffId, staffFirst, staffLast];
+
+        return record.map(s => {
+            const trimmed = s.trim();
+            return trimmed.length > 0 ? trimmed : null;
+        });
+    }
+
+    function nonemptyValueOrDefault(value, defaultValue) {
+         return value && value.length > 0 ? value : defaultValue;
     }
 
     return {parseCsv};

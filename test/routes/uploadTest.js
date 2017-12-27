@@ -11,7 +11,6 @@ const authenticationMiddleware = auth.authenticationMiddleware;
 const csvParserBuilder = require('../../server/utils/csvParser');
 const batchloadServiceBuilder = require('../../server/services/batchloadService');
 
-
 const execBulkLoad = sandbox.stub();
 const addBulkloadRow = sandbox.stub().returns(1);
 
@@ -42,7 +41,9 @@ const nomisClientBuilder = sandbox.stub().returns(nomisClient);
 
 const loggerStub = {
     debug: sandbox.stub(),
-    info: sandbox.stub()
+    info: sandbox.stub(),
+    warn: sandbox.stub(),
+    error: sandbox.stub()
 };
 
 const audit = {
@@ -64,7 +65,8 @@ const app = appSetup(createUploadRoute({
     dbClient: dbClientStub,
     audit,
     authenticationMiddleware,
-    csvParser}), testUser);
+    csvParser
+}), testUser);
 
 describe('POST /upload', () => {
 
@@ -75,12 +77,12 @@ describe('POST /upload', () => {
     it('should add valid data to staging db and redirect to results', () => {
         return request(app)
             .post('/')
-            .attach('datafile', __dirname + '/testCsvs/oneValidRow.csv')
+            .attach('datafile', __dirname + '/resources/oneValidRow.csv')
             .expect(302)
             .expect(res => {
                 expect(execBulkLoad).to.be.calledOnce();
                 expect(addBulkloadRow).to.be.calledOnce();
-                expect(res.text).to.include('Redirecting to /?result');
+                expect(res.text).to.include('Redirecting to /');
             });
     });
 
@@ -94,7 +96,7 @@ describe('POST /upload', () => {
     it('should throw an error if non csv uploaded', () => {
         return request(app)
             .post('/')
-            .attach('datafile', __dirname + '/testCsvs/invalid.xls')
+            .attach('datafile', __dirname + '/resources/invalid.xls')
             .expect(400);
 
     });
@@ -192,7 +194,7 @@ describe('GET /merge', () => {
         sandbox.reset();
     });
 
-    it('should redirect to route adn call mergeStageToMaster', () => {
+    it('should redirect to route and call mergeStageToMaster', () => {
         return request(app)
             .get('/merge')
             .expect(302)
@@ -209,11 +211,15 @@ describe('GET /viewIncomplete', () => {
         sandbox.reset();
     });
 
-    it('should redirect to route adn call mergeStageToMaster', () => {
+    it('should redirect to route', () => {
 
         dbClientStub.getStagedIncomplete = sandbox.stub().returnsPromise().resolves([
-            {ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'}, OFFENDER_NOMIS: {value: 2},
-                OFFENDER_PNC: {value: 3}, STAFF_ID: {value: 4}, REJECTION: {value: 5}}
+            {
+                ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+                OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
+                STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6},
+                REJECTION: {value: 7}
+            }
         ]);
 
         return request(app)
@@ -221,11 +227,13 @@ describe('GET /viewIncomplete', () => {
             .expect(200)
             .expect(res => {
                 expect(res.text).to.include('<td>1</td>' +
-                    '<td>2017-12-21 0:0:0.0</td>' +
+                    '<td>21/12/2017 - 00:00</td>' +
                     '<td>2</td>' +
                     '<td>3</td>' +
                     '<td>4</td>' +
-                    '<td>5</td>');
+                    '<td>5</td>' +
+                    '<td>6</td>' +
+                    '<td>7</td>');
             });
     });
 
@@ -248,11 +256,15 @@ describe('GET /viewErrors', () => {
         sandbox.reset();
     });
 
-    it('should redirect to route adn call mergeStageToMaster', () => {
+    it('should redirect to route', () => {
 
         dbClientStub.getRejected = sandbox.stub().returnsPromise().resolves([
-            {ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'}, OFFENDER_NOMIS: {value: 2},
-                OFFENDER_PNC: {value: 3}, STAFF_ID: {value: 4}, REJECTION: {value: 5}}
+            {
+                ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+                OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
+                STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6},
+                REJECTION: {value: 7}
+            }
         ]);
 
         return request(app)
@@ -260,11 +272,13 @@ describe('GET /viewErrors', () => {
             .expect(200)
             .expect(res => {
                 expect(res.text).to.include('<td>1</td>' +
-                    '<td>2017-12-21 0:0:0.0</td>' +
+                    '<td>21/12/2017 - 00:00</td>' +
                     '<td>2</td>' +
                     '<td>3</td>' +
                     '<td>4</td>' +
-                    '<td>5</td>');
+                    '<td>5</td>' +
+                    '<td>6</td>' +
+                    '<td>7</td>');
             });
     });
 
@@ -283,8 +297,7 @@ describe('GET /viewErrors', () => {
 
 describe('GET /fill', () => {
 
-    afterEach(() => {
-        sandbox.reset();
+    beforeEach(() => {
         dbClientStub.copyNomisIdsFromMaster.resolves();
         dbClientStub.getStagedPncs.resolves([
             {OFFENDER_PNC: {value: 'a'}},
@@ -293,18 +306,20 @@ describe('GET /fill', () => {
         nomisClient.getNomisIdForPnc.resolves([{offenderId: 'offenderId'}]);
     });
 
+    afterEach(() => {
+        sandbox.reset();
+        batchloadService.stopFilling();
+    });
+
     it('should start the queue for collecting and filling nomis ids', () => {
         return request(app)
             .get('/fill')
             .expect(302)
             .expect(res => {
-
                 expect(dbClientStub.copyNomisIdsFromMaster).to.be.calledOnce();
                 expect(dbClientStub.getStagedPncs).to.be.calledOnce();
-
                 expect(dbClientStub.fillNomisId).to.be.calledOnce();
                 expect(dbClientStub.fillNomisId).to.be.calledWith('a', 'offenderId', null);
-
             });
     });
 

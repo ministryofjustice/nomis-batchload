@@ -15,16 +15,20 @@ block content
                 th Nomis
                 th PNC
                 th Staff ID
+                th Staff First
+                th Staff Last
                 th Rejection
         tbody
             each entry in report
                 tr
                     td #{entry[0]}
-                    td #{entry[1]}
+                    td #{moment(entry[1]).format('DD/MM/YYYY - HH:mm')}
                     td #{entry[2]}
                     td #{entry[3]}
                     td #{entry[4]}
                     td #{entry[5]}
+                    td #{entry[6]}
+                    td #{entry[7]}
 
 
     br

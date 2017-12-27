@@ -1,5 +1,6 @@
 const logger = require('../../log');
 const config = require('../config');
+const audit = require('../data/audit');
 const {IntervalQueue} = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
@@ -38,6 +39,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     function fillingFinished() {
         fillingState = false;
+        audit.record('FILL_DONE', 'SYSTEM');
     }
 
     async function startFilling() {
@@ -53,7 +55,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function findNomisId(pnc) {
-        console.log('findNomisId for PNC: ' + pnc);
+        logger.debug('findNomisId for PNC: ' + pnc);
         try {
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
@@ -69,7 +71,6 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function fillNomisId(result) {
-        console.log('fillNomisId');
         const nomisId = result.id || null;
         const rejection = result.rejection || null;
 
@@ -83,28 +84,30 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     function sendingFinished() {
         sendingState = false;
+        audit.record('SEND_DONE', 'SYSTEM');
     }
 
     async function startSending() {
-        console.log('start sending');
         const pending = await dbClient.getPending();
         sendingQueue.start(pending);
     }
 
     async function sendRelationToApi(record) {
-        console.log('sendRelationToApi');
+        logger.debug('sendRelationToApi');
         const nomisId = record.OFFENDER_NOMIS.value;
         const staffId = record.STAFF_ID.value;
+        const first = record.STAFF_FIRST.value;
+        const last = record.STAFF_LAST.value;
         const rowId = record.ID.value;
 
-        const result = await updateNomis(nomisId, staffId);
+        const result = await updateNomis(nomisId, staffId, first, last);
         await dbClient.updateWithNomisResult(rowId, result.rejection);
     }
 
-    async function updateNomis(nomisId, staffId) {
-        console.log('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
+    async function updateNomis(nomisId, staffId, first, last) {
+        logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
-            await nomisClient.postComRelation(nomisId, staffId);
+            await nomisClient.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {
             logger.warn('Error updating nomis: ' + error);

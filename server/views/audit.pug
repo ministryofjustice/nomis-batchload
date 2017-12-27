@@ -1,0 +1,30 @@
+extends layout
+
+block content
+
+    div.back-link-container
+        a.link-back(href="/") Back
+
+    h1.heading-large Activity Log
+
+    table
+        thead
+            tr
+                th Timestamp
+                th User
+                th Action
+                th Info
+        tbody
+            each entry in report
+                tr
+                    td #{moment(entry[0]).format('DD/MM/YYYY - HH:mm')}
+                    td #{entry[1]}
+                    td #{entry[2]}
+                    td #{entry[3]}
+
+
+    br
+    br
+    a#backBtn.requiredButton.button.button(href="/" role="button") Back
+    br
+    br

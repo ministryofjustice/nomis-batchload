@@ -2,6 +2,7 @@ const superagent = require('superagent');
 const config = require('../config');
 const generateApiGatewayToken = require('./apiGateway');
 const logger = require('../../log');
+const audit = require('../data/audit');
 
 async function signIn(username, password) {
 
@@ -25,6 +26,7 @@ async function signIn(username, password) {
         logger.info(`Elite2 login success for [${username}]`);
         const eliteAuthorisationToken = loginResult.body.token;
 
+
         const profileResult = await superagent
             .get(`${config.nomis.apiUrl}/users/me`)
             .set('Authorization', `Bearer ${generateApiGatewayToken()}`)
@@ -36,6 +38,7 @@ async function signIn(username, password) {
         const roleCode = role.roleCode.substring(role.roleCode.lastIndexOf('_') + 1);
 
         logger.info(`Elite2 profile success for [${username}] with role  [${roleCode}]`);
+        audit.record('LOGIN', profileResult.body.email);
         return {...profileResult.body, ...{token: eliteAuthorisationToken}, ...{role}, ...{roleCode}};
 
     } catch (exception) {

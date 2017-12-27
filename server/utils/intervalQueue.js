@@ -12,7 +12,6 @@ function IntervalQueue(method, interval, finishedCallback) {
         try {
             this.method(head);
         } catch (err) {
-            // do something
             console.error(err);
         }
 
@@ -34,6 +33,5 @@ IntervalQueue.prototype.start = function(list) {
 };
 
 IntervalQueue.prototype.stop = function() {
-    console.log('STOP');
     clearTimeout(this.timer);
 };

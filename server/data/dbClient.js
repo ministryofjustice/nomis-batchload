@@ -26,6 +26,8 @@ module.exports = {
             bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
             bulkload.addColumn('STAFF_ID', TYPES.NVarChar, {length: 50, nullable: true});
+            bulkload.addColumn('STAFF_FIRST', TYPES.NVarChar, {length: 250, nullable: true});
+            bulkload.addColumn('STAFF_LAST', TYPES.NVarChar, {length: 250, nullable: true});
 
             connection.on('connect', error => {
                 if (error) {
@@ -45,16 +47,14 @@ module.exports = {
 
     getStagedIncomplete: function() {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
-                'AND OFFENDER_PNC IS NOT NULL ORDER BY ID';
+            const sql = 'SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ORDER BY ID';
             getCollection(sql, null, resolve, reject);
         });
     },
 
     getStagedIncompleteCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
-                ' AND OFFENDER_PNC IS NOT NULL';
+            const sql = 'SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL';
             getCollection(sql, null, resolve, reject);
         });
     },
@@ -75,7 +75,8 @@ module.exports = {
 
     getStagedPncs: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT OFFENDER_PNC FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL`;
+            const sql = 'SELECT OFFENDER_PNC FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
+                'AND OFFENDER_PNC IS NOT NULL';
             getCollection(sql, null, resolve, reject);
         });
     },
@@ -114,8 +115,10 @@ module.exports = {
             'AND stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL; ';
 
-        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, PENDING) ' +
-            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, 1 ' +
+        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
+            'STAFF_FIRST, STAFF_LAST, PENDING) ' +
+            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
+            'STAFF_FIRST, STAFF_LAST, 1 ' +
             'FROM OM_RELATIONS_STAGING stage ' +
             'WHERE stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL ' +
@@ -175,6 +178,13 @@ module.exports = {
     getRejectedCount: function() {
         return new Promise((resolve, reject) => {
             const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTION IS NOT NULL`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getAudit: function() {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT * FROM AUDIT`;
             getCollection(sql, null, resolve, reject);
         });
     }
