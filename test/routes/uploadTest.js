@@ -158,14 +158,13 @@ describe('GET /stopFill', () => {
         sandbox.reset();
     });
 
-    // can't think how to test this is happening!
-
     it('should redirect to route', () => {
         return request(app)
             .get('/stopFill')
             .expect(302)
             .expect(res => {
                 expect(res.text).to.include('Redirecting to /');
+                expect(!batchloadService.isFilling());
             });
     });
 });
@@ -176,14 +175,13 @@ describe('GET /stopSend', () => {
         sandbox.reset();
     });
 
-    // can't think how to test this is happening!
-
     it('should redirect to route', () => {
         return request(app)
             .get('/stopSend')
             .expect(302)
             .expect(res => {
                 expect(res.text).to.include('Redirecting to /');
+                expect(!batchloadService.isSending());
             });
     });
 });
