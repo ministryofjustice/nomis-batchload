@@ -13,6 +13,7 @@
         "start": "node server.js",
         "test": "mocha",
         "test-with-coverage": "nyc --reporter=html mocha",
+        "test-with-coverage-ci": "nyc --reporter=html mocha --reporter mocha-junit-reporter",
         "snyk-protect": "snyk protect",
         "lint": "eslint .",
         "record-build-info": "node ./bin/record-build-info",
