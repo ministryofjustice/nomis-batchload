@@ -14,12 +14,17 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
 
     router.get('/', asyncMiddleware(async (req, res, next) => {
         logger.info('GET /audit');
-        const audit = await dbClient.getAudit();
-        const report = audit ? audit.map(r => [r.TIMESTAMP.value, r.USER.value, r.ACTION.value, r.DETAILS.value]) : [];
-        res.render('audit', {
-            report,
-            moment: require('moment')
-        });
+        try {
+            const audit = await dbClient.getAudit();
+            const report = audit ? audit.map(r => [r.TIMESTAMP.value, r.USER.value, r.ACTION.value, r.DETAILS.value]) : [];
+            res.render('audit', {
+                report,
+                moment: require('moment')
+            });
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
     }));
 
     return router;

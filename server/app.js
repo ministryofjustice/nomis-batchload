@@ -38,7 +38,8 @@ module.exports = function createApp({
                                         signInService,
                                         batchloadService,
                                         dbClient,
-                                        csvParser
+                                        csvParser,
+                                        audit
                                     }) {
     const app = express();
     app.set('port', process.env.PORT || 3001);
@@ -211,7 +212,7 @@ module.exports = function createApp({
         }
     });
 
-    app.use('/', createUploadRouter({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}));
+    app.use('/', createUploadRouter({logger, csvParser, dbClient, batchloadService, audit, authenticationMiddleware}));
     app.use('/audit', createAuditRouter({logger, dbClient, authenticationMiddleware}));
 
     // Error Handler

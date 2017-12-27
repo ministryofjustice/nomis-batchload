@@ -29,6 +29,8 @@ function connect() {
         } else {
             logger.error('DB error: ' + err.message);
         }
+
+        throw err;
     });
 
     logger.debug('Created new DB connection');

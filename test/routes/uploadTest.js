@@ -25,16 +25,19 @@ const dbClientStub = {
         {OFFENDER_PNC: {value: 'a'}},
         {OFFENDER_PNC: {value: 'b'}}
     ]),
+    getPending: sandbox.stub().returnsPromise().resolves([]),
     fillNomisId: sandbox.stub().returnsPromise().resolves(),
     getStagedIncompleteCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getStagedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getPendingCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getRejectedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
-    mergeStageToMaster: sandbox.stub().returnsPromise().resolves()
+    mergeStageToMaster: sandbox.stub().returnsPromise().resolves(),
+    updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
 };
 
 const nomisClient = {
-    getNomisIdForPnc: sandbox.stub().returnsPromise().resolves([{offenderId: 'offenderId'}])
+    getNomisIdForPnc: sandbox.stub().returnsPromise().resolves([{offenderId: 'offenderId'}]),
+    postComRelation: sandbox.stub().returnsPromise().resolves()
 };
 
 const nomisClientBuilder = sandbox.stub().returns(nomisClient);
@@ -68,6 +71,38 @@ const app = appSetup(createUploadRoute({
     csvParser
 }), testUser);
 
+describe('GET /upload', () => {
+
+    afterEach(() => {
+        sandbox.reset();
+        dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}])
+    });
+
+    it('should get data and re-display page', () => {
+        return request(app)
+            .get('/')
+            .expect(200)
+            .expect(res => {
+                expect(dbClientStub.getStagedIncompleteCount).to.be.calledOnce();
+                expect(dbClientStub.getStagedCount).to.be.calledOnce();
+                expect(dbClientStub.getPendingCount).to.be.calledOnce();
+                expect(dbClientStub.getRejectedCount).to.be.calledOnce();
+            });
+    });
+
+    it('should redirect to route if error', () => {
+
+        dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().rejects();
+
+        return request(app)
+            .get('/')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=undefined');
+            });
+    });
+});
+
 describe('POST /upload', () => {
 
     afterEach(() => {
@@ -90,15 +125,26 @@ describe('POST /upload', () => {
         return request(app)
             .post('/')
             .expect(400);
-
     });
 
     it('should throw an error if non csv uploaded', () => {
         return request(app)
             .post('/')
-            .attach('datafile', __dirname + '/resources/invalid.xls')
+            .attach('datafile', __dirname + '/resources/invalid.txt')
             .expect(400);
+    });
 
+    it('should redirect to route if error', () => {
+
+        dbClientStub.clearStaged = sandbox.stub().returnsPromise().rejects(new Error('clearStaged'));
+
+        return request(app)
+            .post('/')
+            .attach('datafile', __dirname + '/resources/oneValidRow.csv')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=Error:%20clearStaged');
+            });
     });
 });
 
@@ -114,6 +160,18 @@ describe('GET /clearStaged', () => {
             .expect(302)
             .expect(res => {
                 expect(dbClientStub.clearStaged).to.be.calledOnce();
+            });
+    });
+
+    it('should redirect to route if error', () => {
+
+        dbClientStub.clearStaged = sandbox.stub().returnsPromise().rejects();
+
+        return request(app)
+            .get('/clearStaged')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=undefined');
             });
     });
 });
@@ -167,6 +225,7 @@ describe('GET /stopFill', () => {
                 expect(!batchloadService.isFilling());
             });
     });
+
 });
 
 describe('GET /stopSend', () => {
@@ -199,6 +258,18 @@ describe('GET /merge', () => {
             .expect(res => {
                 expect(dbClientStub.mergeStageToMaster).to.be.calledOnce();
                 expect(res.text).to.include('Redirecting to /');
+            });
+    });
+
+    it('should redirect to route if error', () => {
+
+        dbClientStub.mergeStageToMaster = sandbox.stub().returnsPromise().rejects();
+
+        return request(app)
+            .get('/merge')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=undefined');
             });
     });
 });
@@ -349,6 +420,69 @@ describe('GET /fill', () => {
             .expect(res => {
                 expect(dbClientStub.fillNomisId).to.be.calledOnce();
                 expect(res.text).to.include('Redirecting to /');
+            });
+    });
+});
+
+describe('GET /send', () => {
+
+    beforeEach(() => {
+        dbClientStub.getPending.resolves([{
+            ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+            OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
+            STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6}
+        },{
+            ID: {value: 12}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+            OFFENDER_NOMIS: {value: 22}, OFFENDER_PNC: {value: 32},
+            STAFF_ID: {value: 42}, STAFF_FIRST: {value: 52}, STAFF_LAST: {value: 62}
+        }]);
+    });
+
+    afterEach(() => {
+        sandbox.reset();
+        batchloadService.stopSending();
+    });
+
+    it('should start the queue for posting relationships to nomis', () => {
+        return request(app)
+            .get('/send')
+            .expect(302)
+            .expect(res => {
+                expect(dbClientStub.getPending).to.be.calledOnce();
+                expect(dbClientStub.updateWithNomisResult).to.be.calledOnce();
+            });
+    });
+
+    it('should handle error getting pending records', () => {
+        dbClientStub.getPending.rejects(new Error('pending'));
+        return request(app)
+            .get('/send')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=Error:%20pending');
+            });
+    });
+
+    it('should continue on api error', () => {
+        nomisClient.postComRelation.rejects(new Error('api error'));
+        return request(app)
+            .get('/send')
+            .expect(302)
+            .expect(res => {
+                expect(dbClientStub.updateWithNomisResult).to.be.calledOnce();
+                expect(res.text).to.include('Redirecting to /');
+            });
+    });
+
+    it('should redirect to route if error', () => {
+
+        dbClientStub.getPending.rejects(new Error('getpending'));
+
+        return request(app)
+            .get('/send')
+            .expect(302)
+            .expect(res => {
+                expect(res.text).to.include('Redirecting to /?error=Error:%20getpending');
             });
     });
 });
