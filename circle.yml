@@ -22,7 +22,7 @@ test:
             MOCHA_FILE: $CIRCLE_TEST_REPORTS/test-results.xml
   post:
       - mkdir -p $CIRCLE_TEST_REPORTS/coverage/
-      - find . -type f -regex ".*/coverage/**" -exec cp {} $CIRCLE_TEST_REPORTS/coverage/ \;
+      - mv coverage/** $CIRCLE_TEST_REPORTS/coverage/
 
 deployment:
   dev:
