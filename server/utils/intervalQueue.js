@@ -7,6 +7,7 @@ function IntervalQueue(method, interval, finishedCallback) {
     this.finishedCallback = finishedCallback;
 
     this.run = function(list) {
+
         const [head, ...tail] = list;
 
         try {

@@ -1,7 +1,7 @@
 const createBatchloadService = require('../../server/services/batchloadService');
 const {expect, sandbox} = require('../testSetup');
 
-describe.skip('batchloadService', () => {
+describe('batchloadService', () => {
     let dbClient;
     let nomisClient;
     let nomisClientBuilder;
@@ -9,24 +9,41 @@ describe.skip('batchloadService', () => {
 
     beforeEach(() => {
         dbClient = {
+            copyNomisIdsFromMaster: sandbox.stub().returnsPromise().resolves(),
             getStagedIncomplete: sandbox.stub().returnsPromise().resolves(
                 [{ID: {value: 1}, OFFENDER_PNC: {value: '123'}}]),
+            getStagedPncs: sandbox.stub().returnsPromise().resolves([
+                {OFFENDER_PNC: {value: '123'}},
+                {OFFENDER_PNC: {value: '456'}}
+            ]),
             fillNomisId: sandbox.stub().returnsPromise().resolves(),
             findNomisId: sandbox.stub().returnsPromise().resolves([{OFFENDER_NOMIS: {value: 'abc'}}]),
-            getPending: sandbox.stub().returnsPromise().resolves(
-                [{OFFENDER_NOMIS: {value: 'abc'}, STAFF_ID: {value: 'staffid'}, ID: {value: 'recordId'}}]
-            ),
+            getPending: sandbox.stub().returnsPromise().resolves([{
+                ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+                OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
+                STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6}
+            }, {
+                ID: {value: 12}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
+                OFFENDER_NOMIS: {value: 22}, OFFENDER_PNC: {value: 32},
+                STAFF_ID: {value: 42}, STAFF_FIRST: {value: 52}, STAFF_LAST: {value: 62}
+            }]),
             markFillRejected: sandbox.stub().returnsPromise().resolves(),
-            markProcessed: sandbox.stub().returnsPromise().resolves()
-        };
+            markProcessed: sandbox.stub().returnsPromise().resolves(),
+            updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
+        }
+        ;
 
         nomisClient = {
-            getNomisIdForPnc: sandbox.stub().returnsPromise().resolves({}),
+            getNomisIdForPnc: sandbox.stub().returnsPromise().resolves([{offenderId: 'id-from-nomis'}]),
             postComRelation: sandbox.stub().returnsPromise().resolves()
         };
 
+        const audit = {
+            record: sandbox.stub()
+        };
+
         nomisClientBuilder = sandbox.stub().returns(nomisClient);
-        service = createBatchloadService(nomisClientBuilder, dbClient);
+        service = createBatchloadService(nomisClientBuilder, dbClient, audit);
     });
 
     afterEach(() => {
@@ -34,112 +51,91 @@ describe.skip('batchloadService', () => {
     });
 
     describe('fill', () => {
-        it('should fill the nomis id if it finds them locally', async() => {
-           await service.fill();
 
-           expect(dbClient.fillNomisId).to.be.calledOnce();
-           expect(dbClient.fillNomisId).to.be.calledWith(1, 'abc');
+        it('should copy IDs from master', async () => {
+            await service.fill();
+            expect(dbClient.copyNomisIdsFromMaster).to.be.calledOnce();
         });
 
-        it('should fill multiple nomis ids if it finds them locally', async() => {
-            const multipleIncomplete = [
-                {ID: {value: 1}, OFFENDER_PNC: {value: 'pnc1'}},
-                {ID: {value: 2}, OFFENDER_PNC: {value: 'pnc2'}},
-                {ID: {value: 3}, OFFENDER_PNC: {value: 'pnc3'}},
-                {ID: {value: 4}, OFFENDER_PNC: {value: 'pnc4'}},
-                {ID: {value: 5}, OFFENDER_PNC: {value: 'pnc5'}}
-            ];
-            dbClient.getStagedIncomplete.resolves(multipleIncomplete);
+        it('should try to fill staged PNCs', async () => {
             await service.fill();
-
-            expect(dbClient.fillNomisId).to.have.callCount(5);
+            expect(dbClient.getStagedPncs).to.be.calledOnce();
         });
 
-        it('should ask nomis for an id if it cant find one', async() => {
-            dbClient.findNomisId.resolves([{OFFENDER_NOMIS: {value: ''}}]);
+        it('should ask nomis for an id if it cant find one', async () => {
             await service.fill();
-
-            expect(dbClient.fillNomisId).to.not.be.called();
             expect(nomisClient.getNomisIdForPnc).to.be.calledOnce();
             expect(nomisClient.getNomisIdForPnc).to.be.calledWith('123');
         });
 
-        it('should fill the rest if any error', async() => {
-            const multipleWithError = [
-                {ID: {value: 1}, OFFENDER_PNC: {value: 'pnc1'}},
-                {ID: {value: 2}, OFFENDER_PNC: {value: 'pnc2'}},
-                {ID: {value: 3}, OFFENDER_PNC: {value: 'pnc3'}},
-                {ID: {value: 4}, OFFENDER_PNC: {value: 'pnc4'}},
-                {ID: {value: 5}, OFFENDER_PNC: {value: 'pnc5'}}
-            ];
-
-            dbClient.getStagedIncomplete.resolves(multipleWithError);
-            dbClient.findNomisId.onThirdCall().throws();
+        it('should send found id to db', async () => {
             await service.fill();
+            expect(dbClient.fillNomisId).to.be.calledOnce();
+            expect(dbClient.fillNomisId).to.be.calledWith('123', 'id-from-nomis');
+        });
 
-            expect(dbClient.fillNomisId).to.have.callCount(4);
-            expect(dbClient.fillNomisId).to.be.calledWith(5, 'abc');
+        it('should send found id and error message to db when API error', async () => {
+            nomisClient.getNomisIdForPnc.rejects(new Error('error-from-nomis'));
+            await service.fill();
+            expect(dbClient.fillNomisId).to.be.calledOnce();
+            expect(dbClient.fillNomisId).to.be.calledWith('123', null, '0: "Unknown"');
         });
     });
 
     describe('send', () => {
         it('should do nothing if no pending results', async () => {
-           dbClient.getPending.resolves([]);
-           await service.send();
-
-           expect(nomisClient.postComRelation).to.not.be.called();
+            dbClient.getPending.resolves([]);
+            await service.send();
+            expect(nomisClient.postComRelation).to.not.be.called();
         });
 
         it('should update nomis with pending results', async () => {
             await service.send();
-
             expect(nomisClient.postComRelation).to.be.calledOnce();
-            expect(nomisClient.postComRelation).to.be.calledWith('abc', 'staffid');
+            expect(nomisClient.postComRelation).to.be.calledWith(2, 4);
         });
 
-        it('should update nomis with multiple results', async () => {
-            dbClient.getPending.resolves([
-                {OFFENDER_NOMIS: {value: 'nomisId'}, STAFF_ID: {value: 'staffId'}, ID: {value: 'recordId'}},
-                {OFFENDER_NOMIS: {value: 'nomisId1'}, STAFF_ID: {value: 'staffid2'}, ID: {value: 'recordId2'}},
-                {OFFENDER_NOMIS: {value: 'nomisId2'}, STAFF_ID: {value: 'staffid3'}, ID: {value: 'recordId3'}}
-            ]);
-
+        it('should send error message to db when API error', async () => {
+            nomisClient.postComRelation.rejects(new Error('error-from-nomis'));
             await service.send();
+            expect(dbClient.updateWithNomisResult).to.be.calledOnce();
+            expect(dbClient.updateWithNomisResult).to.be.calledWith(1, '0: "Unknown"');
+        });
+    });
 
-            expect(nomisClient.postComRelation).to.be.calledThrice();
+
+    describe('stop/start', () => {
+
+        it('should switch filling status with start stop', async () => {
+            expect(service.isFilling()).to.be.false();
+            service.fill();
+            expect(service.isFilling()).to.be.true();
+            service.stopFilling();
+            expect(service.isFilling()).to.be.false();
         });
 
-        it('should mark successful posts with processed', async () => {
-            await service.send();
-
-            expect(dbClient.markProcessed).to.be.calledOnce();
-            expect(dbClient.markProcessed).to.be.calledWith('recordId');
-            expect(dbClient.markFillRejected).to.not.be.called();
+        it('should switch sending status with start stop', async () => {
+            expect(service.isSending()).to.be.false();
+            service.send();
+            expect(service.isSending()).to.be.true();
+            service.stopSending();
+            expect(service.isSending()).to.be.false();
         });
 
-        it('should mark unsuccessful posts with rejected', async () => {
-            nomisClient.postComRelation.rejects({status: 400});
-            await service.send();
-
-            expect(dbClient.markFillRejected).to.be.calledOnce();
-            expect(dbClient.markFillRejected).to.be.calledWith('recordId');
-            expect(dbClient.markProcessed).to.not.be.called();
+        it('should switch filling state with completion callback', async () => {
+            expect(service.isFilling()).to.be.false();
+            service.fill();
+            expect(service.isFilling()).to.be.true();
+            service.fillingFinished();
+            expect(service.isFilling()).to.be.false();
         });
 
-        it('should only mark unsuccessful posts with processed', async () => {
-            dbClient.getPending.resolves([
-                {OFFENDER_NOMIS: {value: 'nomisId'}, STAFF_ID: {value: 'staffId'}, ID: {value: 'recordId'}},
-                {OFFENDER_NOMIS: {value: 'nomisId1'}, STAFF_ID: {value: 'staffid2'}, ID: {value: 'recordId2'}},
-                {OFFENDER_NOMIS: {value: 'nomisId2'}, STAFF_ID: {value: 'staffid3'}, ID: {value: 'recordId3'}}
-            ]);
-            nomisClient.postComRelation.onSecondCall().throws();
-            await service.send();
-
-            expect(dbClient.markProcessed).to.be.calledTwice();
-            expect(dbClient.markProcessed).to.be.calledWith('recordId');
-            expect(dbClient.markProcessed).to.be.calledWith('recordId3');
-            expect(dbClient.markFillRejected).to.be.calledOnce();
-            expect(dbClient.markFillRejected).to.be.calledWith('recordId2');
+        it('should switch sending status with completion callback', async () => {
+            expect(service.isSending()).to.be.false();
+            service.send();
+            expect(service.isSending()).to.be.true();
+            service.sendingFinished();
+            expect(service.isSending()).to.be.false();
         });
     });
 });

@@ -1,9 +1,7 @@
 const express = require('express');
 const config = require('../config');
 
-const audit = require('../data/audit');
-
-module.exports = function({logger, csvParser, dbClient, batchloadService, authenticationMiddleware}) {
+module.exports = function({logger, csvParser, dbClient, batchloadService, audit, authenticationMiddleware}) {
     const router = express.Router();
     router.use(authenticationMiddleware());
 

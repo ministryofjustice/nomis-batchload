@@ -1,9 +1,8 @@
 const logger = require('../../log');
 const config = require('../config');
-const audit = require('../data/audit');
 const {IntervalQueue} = require('../utils/intervalQueue');
 
-module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
+module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit) {
 
     const systemUserToken = 'todo';
     const nomisClient = nomisClientBuilder(systemUserToken);
@@ -79,7 +78,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     async function send() {
         sendingState = true;
-        startSending();
+        await startSending();
     }
 
     function sendingFinished() {
@@ -118,5 +117,5 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         }
     }
 
-    return {fill, send, isFilling, isSending, stopFilling, stopSending};
+    return {fill, send, isFilling, isSending, stopFilling, stopSending, fillingFinished, sendingFinished};
 };

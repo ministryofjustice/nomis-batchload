@@ -44,10 +44,18 @@ describe('intervalQueue', () => {
         expect(methodStub).to.not.be.called();
     });
 
-    it('should not call finishedCallback with empty list', () => {
+    it('should call finishedCallback even with empty list', () => {
         const list = [];
         intervalQueue.start(list);
 
+        expect(finishedCallback).to.be.calledOnce();
+    });
+
+    it('should call finishedCallback when ist becomes empty', () => {
+        const list = ['a'];
+        intervalQueue.start(list);
+
+        expect(methodStub).to.be.calledOnce();
         expect(finishedCallback).to.be.calledOnce();
     });
 
@@ -78,5 +86,16 @@ describe('intervalQueue', () => {
         clock.tick(20000);
 
         expect(methodStub).to.be.calledTwice();
+    });
+
+    it('should carry on after target method causes error', () => {
+
+        methodStub.throws(new Error('getpending'));
+
+        const list = ['a', 'b', 'c'];
+        intervalQueue.start(list);
+        clock.tick(10000);
+
+        expect(methodStub).to.be.calledThrice();
     });
 });
