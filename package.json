@@ -12,7 +12,7 @@
     "scripts": {
         "start": "node server.js",
         "test": "mocha",
-        "test-with-coverage": "nyc --reporter=html --check-coverage mocha",
+        "test-with-coverage": "nyc --reporter=html mocha",
         "snyk-protect": "snyk protect",
         "lint": "eslint .",
         "record-build-info": "node ./bin/record-build-info",
