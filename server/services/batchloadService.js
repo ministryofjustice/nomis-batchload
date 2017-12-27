@@ -1,5 +1,6 @@
 const logger = require('../../log');
 const config = require('../config');
+const audit = require('../data/audit');
 const {IntervalQueue} = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
@@ -17,7 +18,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return fillingState;
     }
 
-    async function stopFilling() {
+    function stopFilling() {
         fillingQueue.stop();
         fillingState = false;
     }
@@ -26,18 +27,19 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
         return sendingState;
     }
 
-    async function stopSending() {
+    function stopSending() {
         sendingQueue.stop();
         sendingState = false;
     }
 
     async function fill() {
         fillingState = true;
-        startFilling();
+        await startFilling();
     }
 
     function fillingFinished() {
         fillingState = false;
+        audit.record('FILL_DONE', 'SYSTEM');
     }
 
     async function startFilling() {
@@ -53,7 +55,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function findNomisId(pnc) {
-        console.log('findNomisId for PNC: ' + pnc);
+        logger.debug('findNomisId for PNC: ' + pnc);
         try {
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
@@ -69,7 +71,6 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
     }
 
     async function fillNomisId(result) {
-        console.log('fillNomisId');
         const nomisId = result.id || null;
         const rejection = result.rejection || null;
 
@@ -83,16 +84,16 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient) {
 
     function sendingFinished() {
         sendingState = false;
+        audit.record('SEND_DONE', 'SYSTEM');
     }
 
     async function startSending() {
-        console.log('start sending');
         const pending = await dbClient.getPending();
         sendingQueue.start(pending);
     }
 
     async function sendRelationToApi(record) {
-        console.log('sendRelationToApi');
+        logger.debug('sendRelationToApi');
         const nomisId = record.OFFENDER_NOMIS.value;
         const staffId = record.STAFF_ID.value;
         const first = record.STAFF_FIRST.value;

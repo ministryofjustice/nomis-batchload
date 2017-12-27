@@ -4,11 +4,16 @@ const TYPES = require('tedious').TYPES;
 
 const keys = [
     'LOGIN',
-    'UPLOAD',
+    'UPLOAD_STARTED',
+    'UPLOAD_DONE',
     'CLEAR',
-    'FILL',
+    'FILL_STARTED',
+    'FILL_STOPPED',
+    'FILL_DONE',
     'MERGE',
-    'SEND'
+    'SEND_STARTED',
+    'SEND_STOPPED',
+    'SEND_DONE'
 ];
 
 exports.record = function record(key, user, data) {
