@@ -1,7 +1,7 @@
 const logger = require('../../log');
 const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
-const {NomisClientHolder} = require('./nomisClientHolder');
+const {NomisWrapper} = require('./nomisWrapper');
 
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit, signInService) {
@@ -12,7 +12,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
         roles: config.roles.systemUser
     };
 
-    const nomisClientHolder = new NomisClientHolder(nomisClientBuilder, signInService, systemUserInfo);
+    const nomisWrapper = new NomisWrapper(nomisClientBuilder, signInService, systemUserInfo);
 
     const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
@@ -63,8 +63,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function findNomisId(pnc) {
         logger.debug('findNomisId for PNC: ' + pnc);
         try {
-            const nomis = await nomisClientHolder.get();
-            const nomisResult = await nomis.getNomisIdForPnc(pnc);
+            const nomisResult = await nomisWrapper.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
 
         } catch (error) {
@@ -114,8 +113,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function updateNomis(nomisId, staffId, first, last) {
         logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
-            const nomis = await nomisClientHolder.get();
-            await nomis.postComRelation(nomisId, staffId, first, last);
+            await nomisWrapper.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {
             logger.warn('Error updating nomis: ' + error);
