@@ -31,6 +31,7 @@ const dbClientStub = {
     getStagedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getPendingCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getRejectedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
+    getSentCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     mergeStageToMaster: sandbox.stub().returnsPromise().resolves(),
     updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
 };
@@ -196,6 +197,7 @@ describe('GET /activityStatus', () => {
                     '"staged":3,' +
                     '"pending":3,' +
                     '"rejected":3,' +
+                    '"sent":3,' +
                     '"isFilling":false,' +
                     '"isSending":false}');
             });

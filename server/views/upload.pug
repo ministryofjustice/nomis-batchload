@@ -53,7 +53,7 @@ block content
             div.column-full
                 div.column-half
                     h1.heading-large Submit
-                    p Untried rows:
+                    p Pending rows:
                         =" "
                         span#pendingCount #{pending}
                     p Rows with errors:
@@ -81,6 +81,9 @@ block content
                             a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
                         ="  "
                         a.button.button-secondary(href="/audit" role="button") View activity record
+                        p
+                        if(sent)
+                            p Successfully sent: #{sent}
 
 
 block append scripts

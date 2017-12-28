@@ -40,13 +40,13 @@ describe('nomisWrapper', () => {
     });
 
     it('should do nomis sign in when client acquired', async () => {
-        nomisWrapper.get();
+        nomisWrapper.getClient();
         expect(signInService.signIn).to.be.calledOnce();
     });
 
     it('should not do nomis sign in when client already acquired', async () => {
-        await nomisWrapper.get();
-        await nomisWrapper.get();
+        await nomisWrapper.getClient();
+        await nomisWrapper.getClient();
         expect(signInService.signIn).to.be.calledOnce();
     });
 
@@ -58,16 +58,28 @@ describe('nomisWrapper', () => {
         expect(clientStub.postComRelation).to.be.calledOnce();
     });
 
-    it('should retry once then error when auth error', async () => {
-        clientStub.getNomisIdForPnc.rejects(authErrorStub);
-        await nomisWrapper.getNomisIdForPnc();
+    it('should retry once then error when auth error - getNomisIdForPnc', async () => {
+        try {
+            clientStub.getNomisIdForPnc.throws(authErrorStub);
+            await nomisWrapper.getNomisIdForPnc();
+        } catch (error) {
+            expect(signInService.signIn).to.be.calledTwice();
+            expect(clientStub.getNomisIdForPnc).to.be.calledTwice();
+        }
+    });
 
-        expect(signInService.signIn).to.be.calledTwice();
-        expect(clientStub.getNomisIdForPnc).to.be.calledTwice();
+    it('should retry once then error when auth error - postComRelation', async () => {
+        try {
+            clientStub.postComRelation.throws(authErrorStub);
+            await nomisWrapper.postComRelation();
+        } catch (error) {
+            expect(signInService.signIn).to.be.calledTwice();
+            expect(clientStub.postComRelation).to.be.calledTwice();
+        }
     });
 
     it('should error when sign in error', async () => {
         signInService.signIn.rejects();
-        return expect(nomisWrapper.get()).to.eventually.be.rejectedWith(Error, 'Error logging in as user: name');
+        return expect(nomisWrapper.getClient()).to.eventually.be.rejectedWith(Error, 'Error logging in as user: name');
     });
 });

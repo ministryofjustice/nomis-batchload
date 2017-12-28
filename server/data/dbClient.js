@@ -155,9 +155,10 @@ module.exports = {
 
     updateWithNomisResult: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS SET PENDING = 0, REJECTION = @REJECTION WHERE ID like @ID';
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = @PENDING, REJECTION = @REJECTION WHERE ID like @ID';
 
             const parameters = [
+                {column: 'PENDING', type: TYPES.Bit, value: rejection ? 1 : 0},
                 {column: 'ID', type: TYPES.VarChar, value: recordId},
                 {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
             ];
@@ -182,9 +183,16 @@ module.exports = {
         });
     },
 
-    getAudit: function() {
+    getSentCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM AUDIT`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 0`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getAudit: function(maxCount) {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT TOP ${maxCount} * FROM AUDIT ORDER BY TIMESTAMP DESC`;
             getCollection(sql, null, resolve, reject);
         });
     }

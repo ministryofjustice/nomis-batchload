@@ -64,6 +64,9 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
         logger.debug('findNomisId for PNC: ' + pnc);
         try {
             const nomisResult = await nomisWrapper.getNomisIdForPnc(pnc);
+            if (nomisResult.length < 1) {
+                return {pnc, rejection: 'Empty Response'};
+            }
             return {pnc, id: nomisResult[0].offenderId};
 
         } catch (error) {

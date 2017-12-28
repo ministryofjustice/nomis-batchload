@@ -29,6 +29,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         const staged = await dbClient.getStagedCount();
         const pending = await dbClient.getPendingCount();
         const rejected = await dbClient.getRejectedCount();
+        const sent = await dbClient.getSentCount();
 
         const isFilling = batchloadService.isFilling();
         const isSending = batchloadService.isSending();
@@ -38,6 +39,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             staged: staged[0].COUNT.value,
             pending: pending[0].COUNT.value,
             rejected: rejected[0].COUNT.value,
+            sent: sent[0].COUNT.value,
             isFilling,
             isSending
         };

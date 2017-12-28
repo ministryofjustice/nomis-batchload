@@ -7,16 +7,14 @@ function NomisWrapper(nomisClientBuilder, signInService, userInfo) {
     this.userInfo = userInfo;
 }
 
-NomisWrapper.prototype.get = async function() {
+NomisWrapper.prototype.getClient = async function() {
     if (!this.client) {
         await this.login();
     }
-
     return this.client;
 };
 
 NomisWrapper.prototype.login = async function() {
-    console.log('Auto login for: ' + this.userInfo.name);
     try {
         const user = await this.signInService.signIn(this.userInfo.name, this.userInfo.pass, this.userInfo.roles);
         this.client = await this.nomisClientBuilder(user.token);
@@ -27,11 +25,10 @@ NomisWrapper.prototype.login = async function() {
 
 NomisWrapper.prototype.getNomisIdForPnc = async function(pnc, retry = true) {
     try {
-        const client = await this.get();
+        const client = await this.getClient();
         return await client.getNomisIdForPnc(pnc);
     } catch (error) {
         if (isRetryable(error) && retry) {
-            console.log('Retrying getNomisIdForPnc after auth error');
             this.client = null;
             return await this.getNomisIdForPnc(pnc, false);
         }
@@ -41,11 +38,10 @@ NomisWrapper.prototype.getNomisIdForPnc = async function(pnc, retry = true) {
 
 NomisWrapper.prototype.postComRelation = async function(nomisId, staffId, firstName, lastName, retry = true) {
     try {
-        const client = await this.get();
+        const client = await this.getClient();
         return await client.postComRelation(nomisId, staffId, firstName, lastName);
     } catch (error) {
         if (isRetryable(error) && retry) {
-            console.log('Retrying postComRelation after auth error');
             this.client = null;
             return await this.postComRelation(nomisId, staffId, firstName, lastName, false);
         }
