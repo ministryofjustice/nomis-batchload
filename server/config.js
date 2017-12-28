@@ -46,6 +46,10 @@ module.exports = {
         postRateLimit: 2000
     },
 
+    roles: {
+        batchUser: ['XYZ_SOMETHING_BATCH']
+    },
+
     https: production,
     staticResourceCacheDuration: 365 * oneDay,
     healthcheckInterval: Number(get('HEALTHCHECK_INTERVAL', 0)),

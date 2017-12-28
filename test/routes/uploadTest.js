@@ -75,7 +75,7 @@ describe('GET /upload', () => {
 
     afterEach(() => {
         sandbox.reset();
-        dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}])
+        dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]);
     });
 
     it('should get data and re-display page', () => {
@@ -431,7 +431,7 @@ describe('GET /send', () => {
             ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
             OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
             STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6}
-        },{
+        }, {
             ID: {value: 12}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
             OFFENDER_NOMIS: {value: 22}, OFFENDER_PNC: {value: 32},
             STAFF_ID: {value: 42}, STAFF_FIRST: {value: 52}, STAFF_LAST: {value: 62}

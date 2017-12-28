@@ -4,7 +4,7 @@ const generateApiGatewayToken = require('./apiGateway');
 const logger = require('../../log');
 const audit = require('../data/audit');
 
-async function signIn(username, password) {
+async function signIn(username, password, allowedRoles) {
 
     logger.info(`Log in for: ${username}`);
 
@@ -33,7 +33,7 @@ async function signIn(username, password) {
 
         logger.info(`Elite2 profile success for [${username}]`);
 
-        const role = await getRole(eliteAuthorisationToken);
+        const role = await getRole(eliteAuthorisationToken, allowedRoles);
         const roleCode = role.roleCode.substring(role.roleCode.lastIndexOf('_') + 1);
 
         logger.info(`Elite2 profile success for [${username}] with role  [${roleCode}]`);
@@ -47,39 +47,35 @@ async function signIn(username, password) {
     }
 }
 
-async function getRole(eliteAuthorisationToken) {
+async function getRole(eliteAuthorisationToken, allowedRoles) {
     const rolesResult = await superagent
         .get(`${config.nomis.apiUrl}/users/me/roles`)
         .set('Authorization', `Bearer ${generateApiGatewayToken()}`)
         .set('Elite-Authorization', eliteAuthorisationToken);
 
-    logger.info('Roles response');
+    logger.info('Roles response:');
     logger.info(rolesResult.body);
 
     const roles = rolesResult.body;
 
     if (roles && roles.length > 0) {
         const role = roles.find(role => {
-
-            return true;
-
-            // todo What role is required to access the batch load system?
-            // return role.roleCode.includes('BATCH');
-
-            // todo System user login when calling nomis
+            return allowedRoles.includes(role.roleCode);
         });
 
-        logger.info(`Selected role: ${role.roleCode}`);
-        if (role) return role;
+        if (role) {
+            logger.info(`Selected role: ${role.roleCode}`);
+            return role;
+        }
     }
 
     throw new Error('Login error - no acceptable role');
 }
 
-function signInFor(username, password) {
-    return signIn(username, password);
+function signInFor(username, password, allowedRoles) {
+    return signIn(username, password, allowedRoles);
 }
 
 module.exports = function createSignInService() {
-    return {signIn: (username, password) => signInFor(username, password)};
+    return {signIn: (username, password, allowedRoles) => signInFor(username, password, allowedRoles)};
 };

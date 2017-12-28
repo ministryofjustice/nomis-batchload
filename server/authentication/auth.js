@@ -1,6 +1,8 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
+const config = require('../config');
+
 function authenticationMiddleware() {
     // eslint-disable-next-line
     return (req, res, next) => {
@@ -24,7 +26,7 @@ passport.deserializeUser(function(user, done) {
 function init(signInService) {
     const strategy = new LocalStrategy((username, password, done) => {
         signInService
-            .signIn(username, password)
+            .signIn(username, password, config.roles.batchUser)
             .then(user => done(null, user))
             .catch(error => {
                 done(null, false);

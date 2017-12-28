@@ -23,7 +23,7 @@ describe('db', () => {
 
         // how to cause db connection to fail
 
-        let connection = db.connect();
+        // let connection = db.connect();
     });
 
     it('should close connection on disconnect', async () => {

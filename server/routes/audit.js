@@ -16,7 +16,8 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
         logger.info('GET /audit');
         try {
             const audit = await dbClient.getAudit();
-            const report = audit ? audit.map(r => [r.TIMESTAMP.value, r.USER.value, r.ACTION.value, r.DETAILS.value]) : [];
+            const report = audit ? audit.map(r =>
+                [r.TIMESTAMP.value, r.USER.value, r.ACTION.value, r.DETAILS.value]) : [];
             res.render('audit', {
                 report,
                 moment: require('moment')
