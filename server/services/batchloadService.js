@@ -1,17 +1,24 @@
 const logger = require('../../log');
 const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
+const {NomisClientHolder} = require('./nomisClientHolder');
 
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit, signInService) {
+
+    const systemUserInfo = {
+        name: config.systemUser.username,
+        pass: config.systemUser.password,
+        roles: config.roles.systemUser
+    };
+
+    const nomisClientHolder = new NomisClientHolder(nomisClientBuilder, signInService, systemUserInfo);
 
     const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
 
     let fillingState = false;
     let sendingState = false;
-
-    let lastNomisClient;
 
     function isFilling() {
         return fillingState;
@@ -56,8 +63,8 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function findNomisId(pnc) {
         logger.debug('findNomisId for PNC: ' + pnc);
         try {
-            const nomisClient = await getNomisClient();
-            const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
+            const nomis = await nomisClientHolder.get();
+            const nomisResult = await nomis.getNomisIdForPnc(pnc);
             return {pnc, id: nomisResult[0].offenderId};
 
         } catch (error) {
@@ -107,8 +114,8 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function updateNomis(nomisId, staffId, first, last) {
         logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
-            const nomisClient = await getNomisClient();
-            await nomisClient.postComRelation(nomisId, staffId, first, last);
+            const nomis = await nomisClientHolder.get();
+            await nomis.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {
             logger.warn('Error updating nomis: ' + error);
@@ -119,26 +126,6 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
         }
     }
 
-    async function getNomisClient() {
-        if (lastNomisClient) {
-            logger.info('Already have a nomis client');
-            return lastNomisClient;
-        }
-
-        try {
-            logger.info('Signing in system user');
-            const systemUserProfile = await
-                signInService.signIn(config.systemUser.username, config.systemUser.password, config.roles.systemUser);
-
-            logger.info(systemUserProfile.token);
-
-            lastNomisClient = nomisClientBuilder(systemUserProfile.token);
-            return lastNomisClient;
-        } catch(error) {
-            logger.error('Error logging in as system user');
-            throw new Error('Error logging in as system user');
-        }
-    }
-
     return {fill, send, isFilling, isSending, stopFilling, stopSending, fillingFinished, sendingFinished};
 };
+
