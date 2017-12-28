@@ -44,6 +44,13 @@ describe('intervalQueue', () => {
         expect(methodStub).to.not.be.called();
     });
 
+    it('should not call method with missing list', () => {
+        const list = null;
+        intervalQueue.start(list);
+
+        expect(methodStub).to.not.be.called();
+    });
+
     it('should call finishedCallback even with empty list', () => {
         const list = [];
         intervalQueue.start(list);

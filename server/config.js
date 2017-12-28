@@ -47,7 +47,13 @@ module.exports = {
     },
 
     roles: {
-        batchUser: ['XYZ_SOMETHING_BATCH']
+        batchUser: ['XYZ_SOMETHING_BATCH'],
+        systemUser: ['XYZ_SOMETHING_BATCH_SYSTEM']
+    },
+
+    systemUser: {
+        username: get('BATCH_SYSTEM_USER', 'BATCH_SYSTEM'),
+        password: get('BATCH_SYSTEM_PASSWORD', 'systempass')
     },
 
     https: production,

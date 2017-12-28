@@ -9,7 +9,7 @@ const createUploadRoute = require('../../server/routes/upload');
 const auth = require('../mockAuthentication');
 const authenticationMiddleware = auth.authenticationMiddleware;
 const csvParserBuilder = require('../../server/utils/csvParser');
-const batchloadServiceBuilder = require('../../server/services/batchloadService');
+const createBatchloadService = require('../../server/services/batchloadService');
 
 const execBulkLoad = sandbox.stub();
 const addBulkloadRow = sandbox.stub().returns(1);
@@ -53,6 +53,10 @@ const audit = {
     record: sandbox.stub()
 };
 
+const fakeSignInService = {
+    signIn: sandbox.stub().returns({token: 'fake-system-token'})
+};
+
 const testUser = {
     staffId: 'my-staff-id',
     token: 'my-token',
@@ -60,7 +64,7 @@ const testUser = {
 };
 
 const csvParser = csvParserBuilder(loggerStub, dbClientStub);
-const batchloadService = batchloadServiceBuilder(nomisClientBuilder, dbClientStub);
+const batchloadService = createBatchloadService(nomisClientBuilder, dbClientStub, audit, fakeSignInService);
 
 const app = appSetup(createUploadRoute({
     batchloadService,

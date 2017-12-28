@@ -77,5 +77,6 @@ function signInFor(username, password, allowedRoles) {
 }
 
 module.exports = function createSignInService() {
+    // todo need to pass in audit to allow mocking for tests
     return {signIn: (username, password, allowedRoles) => signInFor(username, password, allowedRoles)};
 };
