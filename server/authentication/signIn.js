@@ -26,7 +26,6 @@ async function signIn(username, password) {
         logger.info(`Elite2 login success for [${username}]`);
         const eliteAuthorisationToken = loginResult.body.token;
 
-
         const profileResult = await superagent
             .get(`${config.nomis.apiUrl}/users/me`)
             .set('Authorization', `Bearer ${generateApiGatewayToken()}`)

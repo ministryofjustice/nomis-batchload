@@ -9,8 +9,9 @@ const createBatchloadService = require('./services/batchloadService');
 
 const createCsvParser = require('./utils/csvParser');
 
+const audit = require('./data/audit');
 const signInService = createSignInService();
-const batchloadService = createBatchloadService(nomisClientBuilder, dbClient);
+const batchloadService = createBatchloadService(nomisClientBuilder, dbClient, audit);
 const csvParser = createCsvParser(logger, dbClient);
 
 const app = createApp({
@@ -18,7 +19,8 @@ const app = createApp({
     signInService,
     batchloadService,
     dbClient,
-    csvParser
+    csvParser,
+    audit
 });
 
 module.exports = app;
