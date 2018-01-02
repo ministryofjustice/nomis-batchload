@@ -42,8 +42,8 @@ module.exports = {
             response: 2000,
             deadline: 2500
         },
-        getRateLimit: 1000,
-        postRateLimit: 2000
+        getRateLimit: 200,
+        postRateLimit: 200
     },
 
     roles: {
