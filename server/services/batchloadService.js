@@ -3,7 +3,6 @@ const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
 const {NomisWrapper} = require('./nomisWrapper');
 
-
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit, signInService) {
 
     const systemUserInfo = {

@@ -66,6 +66,7 @@ describe('batchloadService', () => {
             expect(dbClient.getStagedPncs).to.be.calledOnce();
         });
 
+
         // Can't see why this stopped working
         it.skip('should ask nomis for an id if it cant find one', async () => {
             await service.fill();

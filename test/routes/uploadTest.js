@@ -140,9 +140,7 @@ describe('POST /upload', () => {
     });
 
     it('should redirect to route if error', () => {
-
         dbClientStub.clearStaged = sandbox.stub().returnsPromise().rejects(new Error('clearStaged'));
-
         return request(app)
             .post('/')
             .attach('datafile', __dirname + '/resources/oneValidRow.csv')
