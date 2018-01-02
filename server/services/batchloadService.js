@@ -66,7 +66,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
             if (nomisResult.length < 1) {
                 return {pnc, rejection: 'Empty Response'};
             }
-            return {pnc, id: nomisResult[0].offenderId};
+            return {pnc, id: nomisResult[0].offenderNo};
 
         } catch (error) {
             logger.warn('Error looking up nomis ID: ' + error);

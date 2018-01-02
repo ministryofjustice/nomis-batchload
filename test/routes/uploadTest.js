@@ -376,7 +376,7 @@ describe('GET /fill', () => {
             {OFFENDER_PNC: {value: 'a'}},
             {OFFENDER_PNC: {value: 'b'}}
         ]);
-        nomisClient.getNomisIdForPnc.resolves([{offenderId: 'offenderId'}]);
+        nomisClient.getNomisIdForPnc.resolves([{offenderNo: 'offenderId'}]);
     });
 
     afterEach(() => {
