@@ -107,11 +107,14 @@ module.exports = {
 
     mergeStageToMaster: function() {
         const updateExistingEntries = 'UPDATE OM_RELATIONS ' +
-            'SET PENDING = 1, STAFF_ID = stage.STAFF_ID ' +
+            'SET PENDING = 1, ' +
+            'STAFF_ID = stage.STAFF_ID, STAFF_FIRST = stage.STAFF_FIRST, STAFF_LAST = stage.STAFF_LAST ' +
             'FROM OM_RELATIONS master ' +
             'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
             'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
-            'AND master.STAFF_ID <> stage.STAFF_ID ' +
+            'AND (master.STAFF_ID <> stage.STAFF_ID ' +
+            'OR master.STAFF_FIRST <> stage.STAFF_FIRST ' +
+            'OR master.STAFF_LAST <> stage.STAFF_LAST) ' +
             'AND stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL; ';
 
