@@ -72,11 +72,7 @@ async function getRole(eliteAuthorisationToken, allowedRoles) {
     throw new Error('Login error - no acceptable role');
 }
 
-function signInFor(username, password, allowedRoles) {
-    return signIn(username, password, allowedRoles);
-}
-
 module.exports = function createSignInService() {
     // todo need to pass in audit to allow mocking for tests
-    return {signIn: (username, password, allowedRoles) => signInFor(username, password, allowedRoles)};
+    return {signIn};
 };
