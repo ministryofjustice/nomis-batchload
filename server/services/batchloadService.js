@@ -1,17 +1,8 @@
 const logger = require('../../log');
 const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
-const {NomisWrapper} = require('./nomisWrapper');
 
-module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit, signInService) {
-
-    const systemUserInfo = {
-        name: config.systemUser.username,
-        pass: config.systemUser.password,
-        roles: config.roles.systemUser
-    };
-
-    const nomisWrapper = new NomisWrapper(nomisClientBuilder, signInService, systemUserInfo);
+module.exports = function createBatchloadService(nomisClient, dbClient, audit, signInService) {
 
     const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
@@ -62,7 +53,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function findNomisId(pnc) {
         logger.debug('findNomisId for PNC: ' + pnc);
         try {
-            const nomisResult = await nomisWrapper.getNomisIdForPnc(pnc);
+            const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
             if (nomisResult.length < 1) {
                 return {pnc, rejection: 'Empty Response'};
             }
@@ -115,7 +106,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function updateNomis(nomisId, staffId, first, last) {
         logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
-            await nomisWrapper.postComRelation(nomisId, staffId, first, last);
+            await nomisClient.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {
             logger.warn('Error updating nomis: ' + error);

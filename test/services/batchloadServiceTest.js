@@ -4,7 +4,6 @@ const {expect, sandbox} = require('../testSetup');
 describe('batchloadService', () => {
     let dbClient;
     let nomisClient;
-    let nomisClientBuilder;
     let service;
 
     beforeEach(() => {
@@ -34,7 +33,7 @@ describe('batchloadService', () => {
         ;
 
         nomisClient = {
-            getNomisIdForPnc: sandbox.stub().returnsPromise().resolves([{offenderId: 'id-from-nomis'}]),
+            getNomisIdForPnc: sandbox.stub().returnsPromise().resolves([{offenderNo: 'id-from-nomis'}]),
             postComRelation: sandbox.stub().returnsPromise().resolves()
         };
 
@@ -46,8 +45,7 @@ describe('batchloadService', () => {
             signIn: sandbox.stub().returns({token: 'fake-system-token'})
         };
 
-        nomisClientBuilder = sandbox.stub().returns(nomisClient);
-        service = createBatchloadService(nomisClientBuilder, dbClient, audit, fakeSignInService);
+        service = createBatchloadService(nomisClient, dbClient, audit, fakeSignInService);
     });
 
     afterEach(() => {
@@ -66,27 +64,23 @@ describe('batchloadService', () => {
             expect(dbClient.getStagedPncs).to.be.calledOnce();
         });
 
-
-        // Can't see why this stopped working
-        it.skip('should ask nomis for an id if it cant find one', async () => {
+        it('should ask nomis for an id if it cant find one', async () => {
             await service.fill();
             expect(nomisClient.getNomisIdForPnc).to.be.calledOnce();
             expect(nomisClient.getNomisIdForPnc).to.be.calledWith('123');
         });
 
-        // Can't see why this stopped working
-        it.skip('should send found id to db', async () => {
+        it('should send found id to db', async () => {
             await service.fill();
             expect(dbClient.fillNomisId).to.be.calledOnce();
             expect(dbClient.fillNomisId).to.be.calledWith('123', 'id-from-nomis');
         });
 
-        // Can't see why this stopped working
-        it.skip('should send found id and error message to db when API error', async () => {
+        it('should send found id and error message to db when API error', async () => {
             nomisClient.getNomisIdForPnc.rejects(new Error('error-from-nomis'));
             await service.fill();
             expect(dbClient.fillNomisId).to.be.calledOnce();
-            expect(dbClient.fillNomisId).to.be.calledWith('123', null, '0: "Unknown"');
+            expect(dbClient.fillNomisId).to.be.calledWith('123', null, '0: "error-from-nomis"');
         });
     });
 
@@ -97,22 +91,19 @@ describe('batchloadService', () => {
             expect(nomisClient.postComRelation).to.not.be.called();
         });
 
-        // Can't see why this stopped working
-        it.skip('should update nomis with pending results', async () => {
+        it('should update nomis with pending results', async () => {
             await service.send();
             expect(nomisClient.postComRelation).to.be.calledOnce();
             expect(nomisClient.postComRelation).to.be.calledWith(2, 4);
         });
 
-        // Can't see why this stopped working
-        it.skip('should send error message to db when API error', async () => {
+        it('should send error message to db when API error', async () => {
             nomisClient.postComRelation.rejects(new Error('error-from-nomis'));
             await service.send();
             expect(dbClient.updateWithNomisResult).to.be.calledOnce();
-            expect(dbClient.updateWithNomisResult).to.be.calledWith(1, '0: "Unknown"');
+            expect(dbClient.updateWithNomisResult).to.be.calledWith(1, '0: "error-from-nomis"');
         });
     });
-
 
     describe('stop/start', () => {
 
