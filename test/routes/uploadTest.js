@@ -9,7 +9,7 @@ const createUploadRoute = require('../../server/routes/upload');
 const auth = require('../mockAuthentication');
 const authenticationMiddleware = auth.authenticationMiddleware;
 const csvParserBuilder = require('../../server/utils/csvParser');
-const batchloadServiceBuilder = require('../../server/services/batchloadService');
+const createBatchloadService = require('../../server/services/batchloadService');
 
 const execBulkLoad = sandbox.stub();
 const addBulkloadRow = sandbox.stub().returns(1);
@@ -31,6 +31,7 @@ const dbClientStub = {
     getStagedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getPendingCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     getRejectedCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
+    getSentCount: sandbox.stub().returnsPromise().resolves([{COUNT: {value: 3}}]),
     mergeStageToMaster: sandbox.stub().returnsPromise().resolves(),
     updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
 };
@@ -53,6 +54,10 @@ const audit = {
     record: sandbox.stub()
 };
 
+const fakeSignInService = {
+    signIn: sandbox.stub().returns({token: 'fake-system-token'})
+};
+
 const testUser = {
     staffId: 'my-staff-id',
     token: 'my-token',
@@ -60,7 +65,7 @@ const testUser = {
 };
 
 const csvParser = csvParserBuilder(loggerStub, dbClientStub);
-const batchloadService = batchloadServiceBuilder(nomisClientBuilder, dbClientStub);
+const batchloadService = createBatchloadService(nomisClientBuilder, dbClientStub, audit, fakeSignInService);
 
 const app = appSetup(createUploadRoute({
     batchloadService,
@@ -135,9 +140,7 @@ describe('POST /upload', () => {
     });
 
     it('should redirect to route if error', () => {
-
         dbClientStub.clearStaged = sandbox.stub().returnsPromise().rejects(new Error('clearStaged'));
-
         return request(app)
             .post('/')
             .attach('datafile', __dirname + '/resources/oneValidRow.csv')
@@ -192,6 +195,7 @@ describe('GET /activityStatus', () => {
                     '"staged":3,' +
                     '"pending":3,' +
                     '"rejected":3,' +
+                    '"sent":3,' +
                     '"isFilling":false,' +
                     '"isSending":false}');
             });
@@ -372,7 +376,7 @@ describe('GET /fill', () => {
             {OFFENDER_PNC: {value: 'a'}},
             {OFFENDER_PNC: {value: 'b'}}
         ]);
-        nomisClient.getNomisIdForPnc.resolves([{offenderId: 'offenderId'}]);
+        nomisClient.getNomisIdForPnc.resolves([{offenderNo: 'offenderId'}]);
     });
 
     afterEach(() => {

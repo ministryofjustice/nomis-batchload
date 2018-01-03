@@ -11,7 +11,7 @@ const createCsvParser = require('./utils/csvParser');
 
 const audit = require('./data/audit');
 const signInService = createSignInService();
-const batchloadService = createBatchloadService(nomisClientBuilder, dbClient, audit);
+const batchloadService = createBatchloadService(nomisClientBuilder, dbClient, audit, signInService);
 const csvParser = createCsvParser(logger, dbClient);
 
 const app = createApp({

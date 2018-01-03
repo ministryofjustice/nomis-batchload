@@ -42,8 +42,22 @@ module.exports = {
             response: 2000,
             deadline: 2500
         },
-        getRateLimit: 1000,
-        postRateLimit: 2000
+        getRateLimit: 200,
+        postRateLimit: 200
+    },
+
+    roles: {
+        batchUser: get('BATCH_USER_ROLES', ['XYZ_SOMETHING_BATCH']),
+        systemUser: get('BATCH_SYSTEM_USER_ROLES', ['LEI_SYSTEM_USER'])
+    },
+
+    systemUser: {
+        username: get('BATCH_SYSTEM_USER', 'BATCH_SYSTEM'),
+        password: get('BATCH_SYSTEM_PASSWORD', 'systempass')
+    },
+
+    audit: {
+        max: 10
     },
 
     https: production,

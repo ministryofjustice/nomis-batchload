@@ -107,11 +107,14 @@ module.exports = {
 
     mergeStageToMaster: function() {
         const updateExistingEntries = 'UPDATE OM_RELATIONS ' +
-            'SET PENDING = 1, STAFF_ID = stage.STAFF_ID ' +
+            'SET PENDING = 1, ' +
+            'STAFF_ID = stage.STAFF_ID, STAFF_FIRST = stage.STAFF_FIRST, STAFF_LAST = stage.STAFF_LAST ' +
             'FROM OM_RELATIONS master ' +
             'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
             'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
-            'AND master.STAFF_ID <> stage.STAFF_ID ' +
+            'AND (master.STAFF_ID <> stage.STAFF_ID ' +
+            'OR master.STAFF_FIRST <> stage.STAFF_FIRST ' +
+            'OR master.STAFF_LAST <> stage.STAFF_LAST) ' +
             'AND stage.OFFENDER_NOMIS IS NOT NULL ' +
             'AND stage.STAFF_ID IS NOT NULL; ';
 
@@ -155,9 +158,10 @@ module.exports = {
 
     updateWithNomisResult: function(recordId, rejection) {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS SET PENDING = 0, REJECTION = @REJECTION WHERE ID like @ID';
+            const sql = 'UPDATE OM_RELATIONS SET PENDING = @PENDING, REJECTION = @REJECTION WHERE ID like @ID';
 
             const parameters = [
+                {column: 'PENDING', type: TYPES.Bit, value: rejection ? 1 : 0},
                 {column: 'ID', type: TYPES.VarChar, value: recordId},
                 {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
             ];
@@ -182,9 +186,16 @@ module.exports = {
         });
     },
 
-    getAudit: function() {
+    getSentCount: function() {
         return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM AUDIT`;
+            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 0`;
+            getCollection(sql, null, resolve, reject);
+        });
+    },
+
+    getAudit: function(maxCount) {
+        return new Promise((resolve, reject) => {
+            const sql = `SELECT TOP ${maxCount} * FROM AUDIT ORDER BY TIMESTAMP DESC`;
             getCollection(sql, null, resolve, reject);
         });
     }

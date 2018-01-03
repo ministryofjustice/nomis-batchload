@@ -2,76 +2,88 @@ extends layout
 
 block content
 
-    div.grid-row.paddingBottom
-        div.column-full
-            div.column-half
-                h1.heading-large Upload
-                form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
-                    input(type="hidden" name="_csrf" value=csrfToken)
-                    input(type="file" name="datafile")
-                    input#continueBtn.requiredButton.button(type="submit" value="Upload")
+    if (error)
+        div.grid-row.paddingBottom
+            div.column-full
+                h1.heading-medium Error
+                div #{error}
+                div
+                    a(href="/") Start again
+    else
+        div.grid-row.paddingBottom
+            div.column-full
 
-                if (error)
-                    h1.heading-medium Upload Error
-                    div #{error}
-
-        div.column-full
-            div.column-half
-                h1.heading-large Prepare
-                p Incomplete records:
-                    =" "
-                    span#stagedIncompleteCount #{stagedIncomplete}
-                if stagedIncomplete > 0
-                    if(isSending)
-                        p Wait for filling to complete
-                    else
-                        if(isFilling)
-                            a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
-                        else
-                            a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
-                        =" "
-                        a.button.button-secondary(href="viewIncomplete" role="button") View incomplete records
-
-            div.column-half
-                h1.heading-large Merge
-                p Ready to merge:
-                    =" "
-                    span#stagedCount  #{staged}
-                if(isSending || isFilling)
-                    p Wait for filling/sending to complete
-                else
-                    if staged > 0
-                        a.button(href="merge" role="button") Merge staging to master
-
-        div.column-full
-            div.column-half
-                h1.heading-large Submit
-                p Untried rows:
-                    =" "
-                    span#pendingCount #{pending}
-                p Rows with errors:
-                    =" "
-                    span#rejectedCount #{rejected}
-                if (pending > 0 || rejected > 0)
-                    if(isFilling)
-                        p Wait for filling to complete
-                    else
-                        if(isSending)
-                            a.button(href="stopSend" role="button") Stop sending to Nomis
-                        else
-                            a.button(href="send" role="button") Start sending to Nomis
-                    =" "
-                    a.button.button-secondary(href="viewErrors" role="button") View rows with errors
-
-        div.column-full
                 div.column-half
-                    h1.heading-large Admin
+                    h1.heading-large Upload
+                    form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
+                        input(type="hidden" name="_csrf" value=csrfToken)
+                        input(type="file" name="datafile")
+                        input#continueBtn.requiredButton.button(type="submit" value="Upload")
+
+            div.column-full
+                div.column-half
+                    h1.heading-large Prepare
+                    p Incomplete records:
+                        =" "
+                        span#stagedIncompleteCount #{stagedIncomplete}
+                    if stagedIncomplete > 0
+                        if(isSending)
+                            p Wait for filling to complete
+                        else
+                            if(isFilling)
+                                a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
+                            else
+                                a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
+                            =" "
+                            a.button.button-secondary(href="viewIncomplete" role="button") View incomplete records
+
+                div.column-half
+                    h1.heading-large Merge
+                    p Ready to merge:
+                        =" "
+                        span#stagedCount  #{staged}
                     if(isSending || isFilling)
                         p Wait for filling/sending to complete
-                    else if staged > 0 || stagedIncomplete > 0
-                        a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
-                    ="  "
-                    a.button.button-secondary(href="/audit" role="button") View activity record
+                    else
+                        if staged > 0
+                            a.button(href="merge" role="button") Merge staging to master
+                        else
+                            p Have you uploaded and filled missing ids?
+
+            div.column-full
+                div.column-half
+                    h1.heading-large Submit
+                    p Pending rows:
+                        =" "
+                        span#pendingCount #{pending}
+                    p Rows with errors:
+                        =" "
+                        span#rejectedCount #{rejected}
+                    if (pending > 0 || rejected > 0)
+                        if(isFilling)
+                            p Wait for filling to complete
+                        else
+                            if(isSending)
+                                a.button(href="stopSend" role="button") Stop sending to Nomis
+                            else
+                                a.button(href="send" role="button") Start sending to Nomis
+                        =" "
+                        a.button.button-secondary(href="viewErrors" role="button") View rows with errors
+                    else
+                        p Have you uploaded and merged?
+
+            div.column-full
+                    div.column-half
+                        h1.heading-large Admin
+                        if(isSending || isFilling)
+                            p Wait for filling/sending to complete
+                        else if staged > 0 || stagedIncomplete > 0
+                            a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
+                        ="  "
+                        a.button.button-secondary(href="/audit" role="button") View activity record
+                        p
+                        if(sent)
+                            p Successfully sent: #{sent}
 
 
 block append scripts

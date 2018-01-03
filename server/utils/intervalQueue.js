@@ -25,11 +25,10 @@ function IntervalQueue(method, interval, finishedCallback) {
 }
 
 IntervalQueue.prototype.start = function(list) {
-    if(list.length === 0) {
+    if(!list || list.length === 0) {
         this.finishedCallback();
         return;
     }
-
     this.run(list);
 };
 

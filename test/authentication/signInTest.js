@@ -10,17 +10,23 @@ const signInService = createSignInService();
 
 const fakeNomis = nock(`${config.nomis.apiUrl}`);
 
-const rolesResponse = [
-    {
-        roleId: 0,
-        roleName: 'roleNameValue',
-        roleCode: 'roleCodeValue',
-        parentRoleCode: 'parentRoleCodeValue'
-    }
-];
+const matchedRole = {
+    roleId: 1,
+    roleName: 'roleNameValue1',
+    roleCode: 'SOME_ROLE_ALLOWED',
+    parentRoleCode: 'parentRoleCodeValue1'
+};
+
+const unmatchedRole = {
+    roleId: 0,
+    roleName: 'roleNameValue0',
+    roleCode: 'SOME_ROLE_WRONG',
+    parentRoleCode: 'parentRoleCodeValue0'
+};
 
 const loginResponse = {token: 'tokenValue'};
 const profileResponse = {profile: 'profileValue'};
+const rolesResponse = [unmatchedRole, matchedRole];
 
 describe('signIn', () => {
 
@@ -29,21 +35,22 @@ describe('signIn', () => {
         sandbox.reset();
     });
 
-    it('should call api for login, profile, role, and return user profile', async () => {
 
+    function withLoginSuccess() {
         fakeNomis
             .post('/users/login', {
                 username: 'user',
                 password: 'pass'
             })
             .reply(function(uri, requestBody) {
-                // The documented way to specify request headers doesn't work so this is a workaround
                 if (this.req.headers['authorization']) { // eslint-disable-line
                     return 200, loginResponse;
                 }
                 return null;
             });
+    }
 
+    function withProfileSuccess() {
         fakeNomis
             .get('/users/me')
             .reply(function(uri, requestBody) {
@@ -52,7 +59,9 @@ describe('signIn', () => {
                 }
                 return null;
             });
+    }
 
+    function withRoleSuccess() {
         fakeNomis
             .get('/users/me/roles')
             .reply(function(uri, requestBody) {
@@ -61,30 +70,62 @@ describe('signIn', () => {
                 }
                 return null;
             });
+    }
 
-        const profileResult = await signInService.signIn('user', 'pass');
+    function withSuccessResponses() {
+        withLoginSuccess();
+        withProfileSuccess();
+        withRoleSuccess();
+    }
 
-        expect(profileResult.token).to.equal('tokenValue');
-        expect(profileResult.roleCode).to.equal('roleCodeValue');
-        expect(profileResult).to.contain(profileResponse);
+    describe('calls nomis api', () => {
+
+        it('should call api for login, profile, role, and return user profile', async () => {
+            withSuccessResponses();
+            const profileResult = await signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED']);
+
+            expect(profileResult.token).to.equal('tokenValue');
+            expect(profileResult).to.contain(profileResponse);
+        });
+
+
+        it('should fail when api error', async () => {
+
+            fakeNomis
+                .post('/users/login')
+                .reply(500);
+
+            return expect(signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED'])).to.be.rejected();
+        });
+
+        it('should fail when unexpected status', async () => {
+
+            fakeNomis
+                .post('/users/login')
+                .reply(203);
+
+            return expect(signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED'])).to.be.rejected();
+        });
     });
 
+    describe('get roles', () => {
 
-    it('should fail when api error', async () => {
+        it('should find first role matching batch user', async () => {
+            withSuccessResponses();
+            const profileResult = await signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED']);
+            expect(profileResult.role.roleCode).to.equal('SOME_ROLE_ALLOWED');
+        });
 
-        fakeNomis
-            .post('/users/login')
-            .reply(500);
+        it('should return role suffix as role code', async () => {
+            withSuccessResponses();
+            const profileResult = await signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED']);
+            expect(profileResult.roleCode).to.equal('ALLOWED');
+        });
 
-        return expect(signInService.signIn('user', 'pass')).to.be.rejected();
-    });
-
-    it('should fail when unexpected status', async () => {
-
-        fakeNomis
-            .post('/users/login')
-            .reply(203);
-
-        return expect(signInService.signIn('user', 'pass')).to.be.rejected();
+        it('should error if no suitable roles', async () => {
+            withSuccessResponses();
+            return expect(signInService.signIn('user', 'pass', ['OTHER_ROLE_UNEXPECTED']))
+                .to.eventually.be.rejectedWith(Error, 'Login error - no acceptable role');
+        });
     });
 });
