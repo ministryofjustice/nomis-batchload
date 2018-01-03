@@ -60,7 +60,7 @@ async function getRole(eliteAuthorisationToken, allowedRoles) {
 
     if (roles && roles.length > 0) {
         const role = roles.find(role => {
-            return allowedRoles.includes(role.roleCode);
+            return allowedRoles.includes(role.roleCode.substring(role.roleCode.indexOf('_') + 1));
         });
 
         if (role) {

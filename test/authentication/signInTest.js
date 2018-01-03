@@ -13,7 +13,7 @@ const fakeNomis = nock(`${config.nomis.apiUrl}`);
 const matchedRole = {
     roleId: 1,
     roleName: 'roleNameValue1',
-    roleCode: 'SOME_ROLE_ALLOWED',
+    roleCode: 'PREFIX_SOME_ROLE_ALLOWED',
     parentRoleCode: 'parentRoleCodeValue1'
 };
 
@@ -110,10 +110,10 @@ describe('signIn', () => {
 
     describe('get roles', () => {
 
-        it('should find first role matching batch user', async () => {
+        it('should find first role matching batch user ignoring prefix', async () => {
             withSuccessResponses();
             const profileResult = await signInService.signIn('user', 'pass', ['SOME_ROLE_ALLOWED']);
-            expect(profileResult.role.roleCode).to.equal('SOME_ROLE_ALLOWED');
+            expect(profileResult.role.roleCode).to.equal('PREFIX_SOME_ROLE_ALLOWED');
         });
 
         it('should return role suffix as role code', async () => {
