@@ -1,17 +1,27 @@
 const createApp = require('./app');
 const logger = require('../log');
+const config = require('./config');
 
 const nomisClientBuilder = require('./data/nomisClientBuilder');
 const dbClient = require('./data/dbClient');
 
 const createSignInService = require('./authentication/signIn');
 const createBatchloadService = require('./services/batchloadService');
+const {NomisWrapper} = require('./services/nomisWrapper');
 
 const createCsvParser = require('./utils/csvParser');
 
 const audit = require('./data/audit');
 const signInService = createSignInService();
-const batchloadService = createBatchloadService(nomisClientBuilder, dbClient, audit, signInService);
+
+const systemUserInfo = {
+    name: config.systemUser.username,
+    pass: config.systemUser.password,
+    roles: config.roles.systemUser
+};
+
+const wrappedNomisBuilder = new NomisWrapper(nomisClientBuilder, signInService, systemUserInfo);
+const batchloadService = createBatchloadService(wrappedNomisBuilder, dbClient, audit, signInService);
 const csvParser = createCsvParser(logger, dbClient);
 
 const app = createApp({
