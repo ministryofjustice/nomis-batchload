@@ -47,8 +47,8 @@ module.exports = {
     },
 
     roles: {
-        batchUser: get('BATCH_USER_ROLES', ['XYZ_SOMETHING_BATCH']),
-        systemUser: get('BATCH_SYSTEM_USER_ROLES', ['LEI_SYSTEM_USER'])
+        batchUser: get('BATCH_USER_ROLES', ['LICENCE_ADMIN']),
+        systemUser: get('BATCH_SYSTEM_USER_ROLES', ['SYSTEM_USER'])
     },
 
     systemUser: {
