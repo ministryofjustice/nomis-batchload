@@ -79,7 +79,9 @@ block content
                         a.button.button-secondary(href="/audit" role="button") View activity record
                         p
                         if(sent)
-                            p Successfully sent: #{sent}
+                            p Successfully sent:
+                                =" "
+                                span#sentCount #{sent}
 
 
 block append scripts
