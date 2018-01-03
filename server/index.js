@@ -20,8 +20,8 @@ const systemUserInfo = {
     roles: config.roles.systemUser
 };
 
-const wrappedNomisBuilder = new NomisWrapper(nomisClientBuilder, signInService, systemUserInfo);
-const batchloadService = createBatchloadService(wrappedNomisBuilder, dbClient, audit, signInService);
+const wrappedNomisClient = new NomisWrapper(nomisClientBuilder, signInService, systemUserInfo);
+const batchloadService = createBatchloadService(wrappedNomisClient, dbClient, audit);
 const csvParser = createCsvParser(logger, dbClient);
 
 const app = createApp({

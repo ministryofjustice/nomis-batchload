@@ -2,7 +2,7 @@ const logger = require('../../log');
 const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
 
-module.exports = function createBatchloadService(nomisClient, dbClient, audit, signInService) {
+module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
 
     const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
