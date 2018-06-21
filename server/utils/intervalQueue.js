@@ -1,3 +1,5 @@
+const logger = require('../../log');
+
 module.exports = {IntervalQueue};
 
 function IntervalQueue(method, interval, finishedCallback) {
@@ -6,30 +8,30 @@ function IntervalQueue(method, interval, finishedCallback) {
     this.interval = interval;
     this.finishedCallback = finishedCallback;
 
-    this.run = function(list) {
+    this.run = function(username, list) {
 
         const [head, ...tail] = list;
 
         try {
-            this.method(head);
+            this.method(username, head);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
         }
 
         if(tail.length === 0) {
             this.finishedCallback();
             return;
         }
-        this.timer = setTimeout(() => this.run(tail), this.interval);
+        this.timer = setTimeout(() => this.run(username, tail), this.interval);
     };
 }
 
-IntervalQueue.prototype.start = function(list) {
+IntervalQueue.prototype.start = function(username, list) {
     if(!list || list.length === 0) {
         this.finishedCallback();
         return;
     }
-    this.run(list);
+    this.run(username, list);
 };
 
 IntervalQueue.prototype.stop = function() {

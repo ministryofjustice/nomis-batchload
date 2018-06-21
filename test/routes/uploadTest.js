@@ -41,6 +41,8 @@ const nomisClient = {
     postComRelation: sandbox.stub().returnsPromise().resolves()
 };
 
+const nomisClientBuilder = sandbox.stub().returns(nomisClient);
+
 const loggerStub = {
     debug: sandbox.stub(),
     info: sandbox.stub(),
@@ -63,7 +65,7 @@ const testUser = {
 };
 
 const csvParser = csvParserBuilder(loggerStub, dbClientStub);
-const batchloadService = createBatchloadService(nomisClient, dbClientStub, audit, fakeSignInService);
+const batchloadService = createBatchloadService(nomisClientBuilder, dbClientStub, audit, fakeSignInService);
 
 const app = appSetup(createUploadRoute({
     batchloadService,

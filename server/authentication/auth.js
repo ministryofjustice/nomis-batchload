@@ -1,7 +1,6 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-
-const config = require('../config');
+const {isEmpty} = require('../utils/functionalHelpers');
 
 function authenticationMiddleware() {
     // eslint-disable-next-line
@@ -24,13 +23,18 @@ passport.deserializeUser(function(user, done) {
 });
 
 function init(signInService) {
-    const strategy = new LocalStrategy((username, password, done) => {
-        signInService
-            .signIn(username, password, config.roles.batchUser)
-            .then(user => done(null, user))
-            .catch(error => {
-                done(null, false);
-            });
+    const strategy = new LocalStrategy(async (username, password, done) => {
+        try {
+            const user = await signInService.signIn(username, password);
+
+            if(isEmpty(user)) {
+                return done(null, false, {message: 'Incorrect username or password'});
+            }
+
+            return done(null, user);
+        } catch(error) {
+            return done(null, false, {message: 'A system error occured; please try again later'});
+        }
     });
 
     passport.use(strategy);

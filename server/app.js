@@ -39,7 +39,8 @@ module.exports = function createApp({
                                         batchloadService,
                                         dbClient,
                                         csvParser,
-                                        audit
+                                        audit,
+                                        tokenStore
                                     }) {
     const app = express();
     app.set('port', process.env.PORT || 3001);
@@ -114,7 +115,7 @@ module.exports = function createApp({
         app.use('/public', sassMiddleware({
             src: path.join(__dirname, '../assets/sass'),
             dest: path.join(__dirname, '../assets/stylesheets'),
-            debug: true,
+            debug: false,
             outputStyle: 'compressed',
             prefix: '/stylesheets/',
             includePaths: [
@@ -146,6 +147,25 @@ module.exports = function createApp({
 
     // GovUK Template Configuration
     app.locals.asset_path = '/public/';
+
+    // token retrieval
+    app.use((req, res, next) => {
+        if (req.user) {
+            const tokens = tokenStore.get(req.user.username);
+
+            if (!tokens) {
+                tokenStore.store(req.user.username, req.user.role, req.user.token, req.user.refreshToken);
+            } else {
+                // token store is more up-to-date than cookie so update tokens
+                if(tokens.token !== req.user.token) {
+                    req.user.token = tokens.token;
+                    req.user.refreshToken = tokens.refreshToken;
+                }
+            }
+        }
+
+        next();
+    });
 
     function addTemplateVariables(req, res, next) {
         res.locals.profile = req.user;

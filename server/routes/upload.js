@@ -100,7 +100,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             logger.info('Starting fill');
             try {
                 audit.record('FILL_STARTED', req.user.email);
-                await batchloadService.fill();
+                await batchloadService.fill(req.user.username);
             } catch (error) {
                 logger.error(error);
                 res.redirect('/?error=' + error);
@@ -138,7 +138,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             try {
                 audit.record('SEND_STARTED', req.user.email);
-                await batchloadService.send();
+                await batchloadService.send(req.user.username);
             } catch (error) {
                 logger.error(error);
                 res.redirect('/?error=' + error);

@@ -2,7 +2,7 @@ const logger = require('../../log');
 const config = require('../config');
 const {IntervalQueue} = require('../utils/intervalQueue');
 
-module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
+module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit) {
 
     const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
     const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
@@ -28,9 +28,9 @@ module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
         sendingState = false;
     }
 
-    async function fill() {
+    async function fill(username) {
         fillingState = true;
-        await startFilling();
+        await startFilling(username);
     }
 
     function fillingFinished() {
@@ -38,22 +38,25 @@ module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
         audit.record('FILL_DONE', 'SYSTEM');
     }
 
-    async function startFilling() {
+    async function startFilling(username) {
         await dbClient.copyNomisIdsFromMaster();
         const pncs = await dbClient.getStagedPncs();
-        fillingQueue.start(pncs);
+
+        fillingQueue.start(username, pncs);
     }
 
-    async function fillNomisIdFromApi(pnc) {
+    async function fillNomisIdFromApi(username, pnc) {
         const pncValue = pnc.OFFENDER_PNC.value;
-        const nomisId = await findNomisId(pncValue);
+        const nomisId = await findNomisId(username, pncValue);
         await fillNomisId(nomisId);
     }
 
-    async function findNomisId(pnc) {
+    async function findNomisId(username, pnc) {
         logger.debug('findNomisId for PNC: ' + pnc);
         try {
+            const nomisClient = nomisClientBuilder(username);
             const nomisResult = await nomisClient.getNomisIdForPnc(pnc);
+
             if (nomisResult.length < 1) {
                 return {pnc, rejection: 'Empty Response'};
             }
@@ -76,9 +79,9 @@ module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
         await dbClient.fillNomisId(result.pnc, nomisId, rejection);
     }
 
-    async function send() {
+    async function send(username) {
         sendingState = true;
-        await startSending();
+        await startSending(username);
     }
 
     function sendingFinished() {
@@ -86,12 +89,12 @@ module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
         audit.record('SEND_DONE', 'SYSTEM');
     }
 
-    async function startSending() {
+    async function startSending(username) {
         const pending = await dbClient.getPending();
-        sendingQueue.start(pending);
+        sendingQueue.start(username, pending);
     }
 
-    async function sendRelationToApi(record) {
+    async function sendRelationToApi(username, record) {
         logger.debug('sendRelationToApi');
         const nomisId = record.OFFENDER_NOMIS.value;
         const staffId = record.STAFF_ID.value;
@@ -99,13 +102,14 @@ module.exports = function createBatchloadService(nomisClient, dbClient, audit) {
         const last = record.STAFF_LAST.value;
         const rowId = record.ID.value;
 
-        const result = await updateNomis(nomisId, staffId, first, last);
+        const result = await updateNomis(username, nomisId, staffId, first, last);
         await dbClient.updateWithNomisResult(rowId, result.rejection);
     }
 
-    async function updateNomis(nomisId, staffId, first, last) {
+    async function updateNomis(username, nomisId, staffId, first, last) {
         logger.info('sending record to nomis, with nomisId: ' + nomisId + ' for staffid: ' + staffId);
         try {
+            const nomisClient = nomisClientBuilder(username);
             await nomisClient.postComRelation(nomisId, staffId, first, last);
             return {rejection: null};
         } catch (error) {

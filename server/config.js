@@ -36,24 +36,21 @@ module.exports = {
 
     nomis: {
         apiUrl: get('NOMIS_API_URL', 'http://localhost:9090/elite2api'),
+        apiGatewayEnabled: get('API_GATEWAY_ENABLED', 'yes'),
         apiGatewayToken: get('NOMIS_GW_TOKEN', 'dummy'),
         apiGatewayPrivateKey: new Buffer(get('NOMIS_GW_KEY', 'dummy'), 'base64').toString('ascii'),
+        licenceRolePrefix: get('LICENCE_ROLE_PREFIX', 'LICENCE'),
+        apiClientId: get('API_CLIENT_ID', 'licences'),
+        apiClientSecret: get('API_CLIENT_SECRET', 'clientsecret'),
+        batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'licencesadmin'),
+        batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
+        batchUserRoles: get('BATCH_USER_ROLES', ['LICENCE_ADMIN']),
         timeout: {
             response: 2000,
             deadline: 2500
         },
         getRateLimit: 200,
         postRateLimit: 200
-    },
-
-    roles: {
-        batchUser: get('BATCH_USER_ROLES', ['LICENCE_ADMIN']),
-        systemUser: get('BATCH_SYSTEM_USER_ROLES', ['SYSTEM_USER'])
-    },
-
-    systemUser: {
-        username: get('BATCH_SYSTEM_USER', 'BATCH_SYSTEM'),
-        password: get('BATCH_SYSTEM_PASSWORD', 'systempass')
     },
 
     audit: {

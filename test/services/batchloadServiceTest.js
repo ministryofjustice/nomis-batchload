@@ -37,6 +37,8 @@ describe('batchloadService', () => {
             postComRelation: sandbox.stub().returnsPromise().resolves()
         };
 
+        const nomisClientBuilder = sandbox.stub().returns(nomisClient);
+
         const audit = {
             record: sandbox.stub()
         };
@@ -45,7 +47,7 @@ describe('batchloadService', () => {
             signIn: sandbox.stub().returns({token: 'fake-system-token'})
         };
 
-        service = createBatchloadService(nomisClient, dbClient, audit, fakeSignInService);
+        service = createBatchloadService(nomisClientBuilder, dbClient, audit, fakeSignInService);
     });
 
     afterEach(() => {
@@ -65,7 +67,7 @@ describe('batchloadService', () => {
         });
 
         it('should ask nomis for an id if it cant find one', async () => {
-            await service.fill();
+            await service.fill('username');
             expect(nomisClient.getNomisIdForPnc).to.be.calledOnce();
             expect(nomisClient.getNomisIdForPnc).to.be.calledWith('123');
         });
