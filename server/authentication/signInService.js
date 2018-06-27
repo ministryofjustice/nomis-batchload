@@ -140,7 +140,7 @@ async function getRoleCode(token) {
     const role = await getRole(token);
     const roleCode = role.roleCode.substring(role.roleCode.lastIndexOf('_') + 1);
 
-    if(config.nomis.batchUserRoles.includes(roleCode)) {
+    if(config.nomis.batchUserRole == roleCode) {
         logger.info(`Elite2 got batch user role code [${roleCode}]`);
         return roleCode;
     }

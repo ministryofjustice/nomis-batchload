@@ -31,7 +31,8 @@ module.exports = {
         username: get('DB_USER', 'user'),
         password: get('DB_PASS', 'password'),
         server: get('DB_SERVER', 'server'),
-        database: get('DB_NAME', 'nomisbatch')
+        database: get('DB_NAME', 'nomisbatch'),
+        sslEnabled: get('DB_SSL_ENABLED', 'true')
     },
 
     nomis: {
@@ -44,7 +45,7 @@ module.exports = {
         apiClientSecret: get('API_CLIENT_SECRET', 'clientsecret'),
         batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'licencesadmin'),
         batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
-        batchUserRoles: get('BATCH_USER_ROLES', ['LICENCE_ADMIN']),
+        batchUserRole: get('BATCH_USER_ROLE', 'LICENCE_ADMIN'),
         timeout: {
             response: 2000,
             deadline: 2500

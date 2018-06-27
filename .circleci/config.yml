@@ -1,0 +1,161 @@
+defaults: &defaults
+  working_directory: ~/noms-digital-studio/nomisbatchload
+  docker:
+    - image: circleci/node:8.10.0-browsers
+
+version: 2
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node_modules-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
+            - node_modules-{{ checksum "package.json" }}
+            - node_modules
+            - yarn-cache
+      - run:
+          command: node -v
+      - run:
+          name: yarn install
+          command: yarn --frozen-lockfile
+      - save_cache:
+          key: node_modules-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
+          paths:
+            - ./node_modules
+      - save_cache:
+          key: yarn-cache
+          paths:
+            - ~/.cache/yarn
+      - run:
+          name: Linter check
+          command: yarn run lint
+      - run:
+          command: |
+            yarn run build
+            DATE=$(date '+%Y-%m-%d')
+            export BUILD_NUMBER=${DATE}.${CIRCLE_BUILD_NUM}
+            export GIT_REF="$CIRCLE_SHA1"
+            yarn run record-build-info
+      - persist_to_workspace:
+          root: .
+          paths:
+            - node_modules
+            - build-info.json
+            - assets/stylesheets
+
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node_modules-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
+            - node_modules-{{ checksum "package.json" }}
+            - node_modules
+            - yarn-cache
+      - run:
+          name: unit tests with coverage
+          command: yarn run test-with-coverage-ci
+          environment:
+            MOCHA_FILE: ./reports/test-results.xml
+      - store_test_results:
+          path: ./reports
+      - store_artifacts:
+          path: coverage
+          destination: coverage
+
+  build_docker:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/noms-digital-studio/nomisbatchload
+      - setup_remote_docker:
+          exclusive: true
+      - run:
+          name: Build container and publish to docker hub (master only)
+          command: |
+             VERSION=$(egrep buildNumber build-info.json  | awk -F"\"" '{print $4}')
+             GIT_REF=$(egrep gitRef build-info.json  | awk -F"\"" '{print $8}')
+             BUILD_VERSION=${VERSION}
+
+             docker build --rm=false . \
+                 --build-arg BUILD_NUMBER=$VERSION \
+                 --build-arg GIT_REF=$GIT_REF \
+                 --tag "mojdigitalstudio/nomisbatchload:$BUILD_VERSION" \
+                 --label "maintainer=licences-team@digital.justice.gov.uk" \
+                 --label "build.number=$CIRCLE_BUILD_NUM" \
+                 --label "build.url=$CIRCLE_BUILD_URL" \
+                 --label "build.gitref=$GIT_REF"
+
+             docker login -u $DOCKER_USER -p $DOCKER_PASS
+             docker tag mojdigitalstudio/nomisbatchload:$BUILD_VERSION mojdigitalstudio/nomisbatchload:latest
+             docker push mojdigitalstudio/nomisbatchload:$BUILD_VERSION
+             docker push mojdigitalstudio/nomisbatchload:latest
+
+#  deploy_release_to_eb:
+#      <<: *defaults
+#      steps:
+#        - checkout
+#        - attach_workspace:
+#            at: ~/noms-digital-studio/nomisbatchload
+#        - deploy:
+#            name: Install elastic beanstalk CLI
+#            command: |
+#              sudo apt-get install python-pip python-dev
+#              pip install --user 'six>-1.9.0' awsebcli --ignore-installed
+#        - deploy:
+#            name: Deploy to Elastic Beanstalk Dev
+#            command: |
+#              VERSION=$(egrep buildNumber build-info.json | awk -F"\"" '{print $4}')
+#              yarn run plant-beanstalk ${VERSION}
+#              ~/.local/bin/eb deploy --process --verbose --label ${VERSION}
+#        - persist_to_workspace:
+#            root: .
+#            paths:
+#              - Dockerrun.aws.json
+
+#  deploy_stage:
+#      <<: *defaults
+#      steps:
+#        - checkout
+#        - attach_workspace:
+#            at: ~/noms-digital-studio/nomisbatchload
+#        - deploy:
+#            name: Install elastic beanstalk CLI
+#            command: |
+#              sudo apt-get install python-pip python-dev
+#              pip install --user 'six>-1.9.0' awsebcli --ignore-installed
+#        - deploy:
+#            name: Deploy to Elastic Beanstalk Stage
+#            command: |
+#              VERSION=$(egrep nomisbatchload Dockerrun.aws.json | awk -F"\"" '{print $4}' |  awk -F":" '{print $2}')
+#              ~/.local/bin/eb deploy nomisbatchload-stage --label ${VERSION}
+
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - build_docker:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+#      - deploy_release_to_eb:
+#          requires:
+#            - build_docker
+#      - hold:
+#          type: approval
+#          requires:
+#            - deploy_release_to_eb
+#      - deploy_stage:
+#          requires:
+#            - hold
