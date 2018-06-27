@@ -20,9 +20,44 @@ block content
                         input(type="file" name="datafile")
                         input#continueBtn.requiredButton.button(type="submit" value="Upload")
 
+
             div.column-full
                 div.column-half
-                    h1.heading-large Prepare
+                    h1.heading-large Clean
+                    div.column-quarter
+                        p Invalid records:
+                            =" "
+                            span#uploadInvalidCount #{uploadInvalid}
+                        if uploadInvalid > 0
+                            a.button.button-secondary(href="viewInvalid" role="button") View invalid records
+
+                    div.column-quarter
+                        p Duplicate records:
+                            =" "
+                            span#uploadDuplicateCount #{uploadDuplicate}
+                        if uploadDuplicate > 0
+                            a.button.button-secondary(href="viewDuplicates" role="button") View duplicate records
+
+                div.column-half
+                    h1.heading-large Stage
+                    p Ready to stage:
+                        =" "
+                        span#uploadValidCount  #{uploadValid}
+                    if(isSending || isFilling)
+                        p Wait for filling/sending to complete
+                    else
+                        if uploadInvalid > 0
+                            a.button(href="removeInvalid" role="button") DISCARD INVALID RECORDS
+                        else if uploadDuplicate > 0
+                            a.button(href="removeDuplicate" role="button") DISCARD DUPLICATE RECORDS
+                        else if uploadValid > 0
+                            a.button(href="stage" role="button") Stage uploaded records
+                        else
+                            p Nothing to stage
+
+            div.column-full
+                div.column-half
+                    h1.heading-large Fill Nomis Ids
                     p Incomplete records:
                         =" "
                         span#stagedIncompleteCount #{stagedIncomplete}
@@ -38,7 +73,7 @@ block content
                             a.button.button-secondary(href="viewIncomplete" role="button") View incomplete records
 
                 div.column-half
-                    h1.heading-large Merge
+                    h1.heading-large Merge to master record
                     p Ready to merge:
                         =" "
                         span#stagedCount  #{staged}
@@ -50,7 +85,7 @@ block content
 
             div.column-full
                 div.column-half
-                    h1.heading-large Submit
+                    h1.heading-large Send to Nomis
                     p Pending rows:
                         =" "
                         span#pendingCount #{pending}
@@ -73,8 +108,11 @@ block content
                         h1.heading-large Admin
                         if(isSending || isFilling)
                             p Wait for filling/sending to complete
-                        else if staged > 0 || stagedIncomplete > 0
-                            a.button.button-secondary(href="clearStaged" role="button") Delete staged data!
+                        else
+                            if staged > 0 || stagedIncomplete > 0
+                                a.button.button-secondary(href="clearStaged" role="button") DELETE staged data
+                            if uploadValid > 0 || uploadInvalid > 0 || uploadDuplicate > 0
+                                a.button.button-secondary(href="clearUpload" role="button") DELETE uploaded data
                         ="  "
                         a.button.button-secondary(href="/audit" role="button") View activity record
                         p

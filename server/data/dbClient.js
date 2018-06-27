@@ -1,202 +1,227 @@
-const {getCollection, execSql} = require('./dataAccess/dbMethods');
-const TYPES = require('tedious').TYPES;
-
-const {
-    connect
-} = require('./dataAccess/db');
+const db = require('./dataAccess/db');
+const copyFrom = require('pg-copy-streams').from;
+const {Readable} = require('stream');
 
 const logger = require('../../log.js');
 
 module.exports = {
 
-    getStageBulkload: function() {
-        return new Promise((resolve, reject) => {
-            const connection = connect();
-
-            const bulkload = connection.newBulkLoad('OM_RELATIONS_STAGING', function(error, rowCount) {
-                if (error) {
-                    logger.error(error);
-                    return reject(error);
-                }
-
-                logger.info('inserted %d rows', rowCount);
-                return rowCount;
-            });
-
-            bulkload.addColumn('OFFENDER_NOMIS', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('OFFENDER_PNC', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('STAFF_ID', TYPES.NVarChar, {length: 50, nullable: true});
-            bulkload.addColumn('STAFF_FIRST', TYPES.NVarChar, {length: 250, nullable: true});
-            bulkload.addColumn('STAFF_LAST', TYPES.NVarChar, {length: 250, nullable: true});
-
-            connection.on('connect', error => {
-                if (error) {
-                    return reject(error);
-                }
-                return resolve({connection, bulkload});
-            });
-        });
+    clearStaged: function() {
+        return db.query(`delete from om_relations_staging`);
     },
 
-    clearStaged: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `DELETE FROM OM_RELATIONS_STAGING`;
-            execSql(sql, [], resolve, reject);
-        });
+    clearUpload: function() {
+        return db.query(`delete from om_relations_upload`);
+    },
+
+    getUploadValidCount: function() {
+        return db.query(`select count(*) as count from om_relations_upload where not
+            (offender_nomis is null and offender_pnc is null)
+            and not
+            staff_id is null
+            `);
+    },
+
+    getUploadInvalidCount: function() {
+        return db.query(`select count(*) as count from om_relations_upload where 
+            (offender_nomis is null and offender_pnc is null)
+            or
+            staff_id is null
+            `);
+    },
+
+    getUploadInvalid: function() {
+        return db.query(`select * from om_relations_upload where 
+            (offender_nomis is null and offender_pnc is null)
+            or
+            staff_id is null
+            order by staff_id
+            `);
+    },
+
+    getUploadDuplicateCount: function() {
+        return db.query(`select count(*) from (
+                select offender_nomis
+                from om_relations_upload
+                group by offender_nomis
+                having count(offender_nomis) > 1
+                ) as duplicates
+            `);
+    },
+
+    getUploadDuplicates: function() {
+        return db.query(`select * from om_relations_upload where offender_nomis in (
+            select offender_nomis from om_relations_upload group by offender_nomis
+            having count(offender_nomis) > 1) order by offender_nomis ASC
+            `);
+    },
+
+    removeInvalid: function() {
+        return db.query(`delete from om_relations_upload where
+            (offender_nomis is null and offender_pnc is null)
+            or
+            staff_id is null`);
+    },
+
+    removeDuplicate: function() {
+        return db.query(`delete from om_relations_upload where
+            offender_nomis in (
+            select offender_nomis from om_relations_upload group by offender_nomis
+            having count(offender_nomis) > 1)`);
     },
 
     getStagedIncomplete: function() {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ORDER BY ID';
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select * from om_relations_staging where offender_nomis is null order by id`);
     },
 
     getStagedIncompleteCount: function() {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL';
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select count(*) as count from om_relations_staging where offender_nomis is null`);
     },
 
     getStaged: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NOT NULL`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select * from om_relations_staging where offender_nomis is not null`);
     },
 
     getStagedCount: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NOT NULL`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select count(*) as count from om_relations_staging where offender_nomis is not null`);
     },
 
     getStagedPncs: function() {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT OFFENDER_PNC FROM OM_RELATIONS_STAGING WHERE OFFENDER_NOMIS IS NULL ' +
-                'AND OFFENDER_PNC IS NOT NULL';
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select offender_pnc from om_relations_staging where offender_nomis is null and 
+        offender_pnc is not null`);
     },
 
     copyNomisIdsFromMaster: function() {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = m.OFFENDER_NOMIS FROM OM_RELATIONS m ' +
-                'WHERE m.OFFENDER_PNC = OM_RELATIONS_STAGING.OFFENDER_PNC';
-
-            execSql(sql, [], resolve, reject);
-        });
+        return db.query(`update om_relations_staging set offender_nomis = m.offender_nomis from om_relations m 
+        where m.offender_pnc = om_relations_staging.offender_pnc`);
     },
 
     fillNomisId: function(pnc, nomisId, rejection) {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS_STAGING SET OFFENDER_NOMIS = ' +
-                '@OFFENDER_NOMIS, REJECTION = @REJECTION WHERE OFFENDER_PNC = @OFFENDER_PNC';
+        const query = {
+            text: 'update om_relations_staging set offender_nomis = $1, rejection = $2 where offender_pnc = $3',
+            values: [nomisId, rejection, pnc]
+        };
 
-            const parameters = [
-                {column: 'OFFENDER_PNC', type: TYPES.VarChar, value: pnc},
-                {column: 'OFFENDER_NOMIS', type: TYPES.VarChar, value: nomisId},
-                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
-            ];
-
-            execSql(sql, parameters, resolve, reject);
-        });
-    },
-
-    mergeStageToMaster: function() {
-        const updateExistingEntries = 'UPDATE OM_RELATIONS ' +
-            'SET PENDING = 1, ' +
-            'STAFF_ID = stage.STAFF_ID, STAFF_FIRST = stage.STAFF_FIRST, STAFF_LAST = stage.STAFF_LAST ' +
-            'FROM OM_RELATIONS master ' +
-            'INNER JOIN OM_RELATIONS_STAGING AS stage ' +
-            'ON master.OFFENDER_NOMIS = stage.OFFENDER_NOMIS ' +
-            'AND (master.STAFF_ID <> stage.STAFF_ID ' +
-            'OR master.STAFF_FIRST <> stage.STAFF_FIRST ' +
-            'OR master.STAFF_LAST <> stage.STAFF_LAST) ' +
-            'AND stage.OFFENDER_NOMIS IS NOT NULL ' +
-            'AND stage.STAFF_ID IS NOT NULL; ';
-
-        const addNewEntries = 'INSERT INTO OM_RELATIONS (OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
-            'STAFF_FIRST, STAFF_LAST, PENDING) ' +
-            'SELECT OFFENDER_NOMIS, OFFENDER_PNC, STAFF_ID, ' +
-            'STAFF_FIRST, STAFF_LAST, 1 ' +
-            'FROM OM_RELATIONS_STAGING stage ' +
-            'WHERE stage.OFFENDER_NOMIS IS NOT NULL ' +
-            'AND stage.STAFF_ID IS NOT NULL ' +
-            'AND NOT EXISTS(SELECT 1 FROM OM_RELATIONS WHERE OFFENDER_NOMIS = stage.OFFENDER_NOMIS); ';
-
-        const removeMergedEntries = 'DELETE FROM OM_RELATIONS_STAGING WHERE ' +
-            'OFFENDER_NOMIS IS NOT NULL ' +
-            'AND STAFF_ID IS NOT NULL; ';
-
-        return new Promise((resolve, reject) => {
-            const sql = 'BEGIN TRANSACTION; ' +
-                updateExistingEntries +
-                addNewEntries +
-                removeMergedEntries +
-                'COMMIT;';
-
-            execSql(sql, null, resolve, reject);
-        });
+        return db.query(query);
     },
 
     getPending: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM OM_RELATIONS WHERE PENDING = 1`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select * from om_relations where pending = true`);
     },
 
     getPendingCount: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 1`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select count(*) as count from om_relations where pending = true`);
     },
 
     updateWithNomisResult: function(recordId, rejection) {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE OM_RELATIONS SET PENDING = @PENDING, REJECTION = @REJECTION WHERE ID like @ID';
+        const query = {
+            text: 'update om_relations set pending = $1, rejection = $2 where id = $3',
+            values: [rejection ? true : false, rejection, recordId]
+        };
 
-            const parameters = [
-                {column: 'PENDING', type: TYPES.Bit, value: rejection ? 1 : 0},
-                {column: 'ID', type: TYPES.VarChar, value: recordId},
-                {column: 'REJECTION', type: TYPES.VarChar, value: rejection}
-            ];
-
-            logger.info('Marking as processed for record ID: ' + recordId);
-
-            execSql(sql, parameters, resolve, reject);
-        });
+        return db.query(query);
     },
 
     getRejected: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM OM_RELATIONS WHERE REJECTION IS NOT NULL`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select * from om_relations where rejection is not null`);
     },
 
     getRejectedCount: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE REJECTION IS NOT NULL`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select count(*) as count from om_relations where rejection is not null`);
     },
 
     getSentCount: function() {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT COUNT(*) AS COUNT FROM OM_RELATIONS WHERE PENDING = 0`;
-            getCollection(sql, null, resolve, reject);
-        });
+        return db.query(`select count(*) as count from om_relations where pending = false`);
     },
 
     getAudit: function(maxCount) {
+        return db.query(`select * from audit order by timestamp desc limit ${maxCount}`);
+    },
+
+    mergeUploadToStage: function() {
+        const move = `insert into om_relations_staging 
+            (offender_nomis, offender_pnc, staff_id, staff_first, staff_last) 
+            select offender_nomis, offender_pnc, staff_id, staff_first, staff_last 
+            from om_relations_upload; `;
+
+        const remove = 'delete from om_relations_upload; ';
+
+        return db.query('begin transaction; ' + move + remove + 'commit;');
+    },
+
+    mergeStageToMaster: function() {
+
+        const updateExistingEntries = `insert into om_relations 
+            (offender_nomis, offender_pnc, staff_id, staff_first, staff_last, pending)
+            select stage.offender_nomis, stage.offender_pnc, stage.staff_id, stage.staff_first, stage.staff_last, true
+            from om_relations_staging stage where stage.offender_nomis is not null and stage.staff_id is not null
+            on conflict(offender_nomis) do update set pending = true, staff_id = excluded.staff_id, 
+            staff_first = excluded.staff_first, staff_last = excluded.staff_last
+            where (om_relations.staff_id <> excluded.staff_id
+                or om_relations.staff_first <> excluded.staff_first
+                or om_relations.staff_last <> excluded.staff_last
+            ); `;
+
+        const addNewEntries = 'insert into om_relations (offender_nomis, offender_pnc, staff_id, ' +
+            'staff_first, staff_last, pending) ' +
+            'select offender_nomis, offender_pnc, staff_id, ' +
+            'staff_first, staff_last, true ' +
+            'from om_relations_staging stage ' +
+            'where stage.offender_nomis is not null ' +
+            'and stage.staff_id is not null ' +
+            'and not exists(select 1 from om_relations where offender_nomis = stage.offender_nomis); ';
+
+        const removeMergedEntries = 'delete from om_relations_staging where ' +
+            'offender_nomis is not null ' +
+            'and staff_id is not null; ';
+
+        return db.query('begin transaction; ' +
+            updateExistingEntries +
+            addNewEntries +
+            removeMergedEntries +
+            'commit;');
+    },
+
+    bulkInsert: data => {
+
         return new Promise((resolve, reject) => {
-            const sql = `SELECT TOP ${maxCount} * FROM AUDIT ORDER BY TIMESTAMP DESC`;
-            getCollection(sql, null, resolve, reject);
+
+            db.pool.connect().then(client => {
+
+                const stream = client.query(copyFrom(`copy om_relations_upload (offender_nomis, offender_pnc, 
+                staff_id, staff_first, staff_last) from stdin with NULL 'null'`));
+
+                const rs = new Readable;
+                let currentIndex = 0;
+
+                rs._read = function() {
+                    if (currentIndex === data.length) {
+                        rs.push(null);
+                    } else {
+                        const row = data[currentIndex];
+                        const entry = row[0] + '\t' + row[1] + '\t' + row[2] + '\t' + row[3] + '\t' + row[4] + '\n';
+                        rs.push(entry);
+                        currentIndex = currentIndex + 1;
+                    }
+                };
+
+                rs.on('error', error => {
+                    logger.error(error);
+                    return reject(error);
+                });
+
+                stream.on('error', error => {
+                    logger.error(error);
+                    return reject(error);
+                });
+
+                stream.on('end', () => {
+                    logger.info('Done');
+                    return resolve(currentIndex);
+                });
+
+                rs.pipe(stream);
+            });
         });
     }
 };

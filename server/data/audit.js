@@ -1,19 +1,22 @@
 const logger = require('../../log');
-const {execSql} = require('./dataAccess/dbMethods');
-const TYPES = require('tedious').TYPES;
+const db = require('./dataAccess/db');
 
 const keys = [
     'LOGIN',
     'UPLOAD_STARTED',
     'UPLOAD_DONE',
-    'CLEAR',
+    'CLEAR_STAGED',
+    'CLEAR_UPLOAD',
     'FILL_STARTED',
     'FILL_STOPPED',
     'FILL_DONE',
     'MERGE',
     'SEND_STARTED',
     'SEND_STOPPED',
-    'SEND_DONE'
+    'SEND_DONE',
+    'REMOVE_INVALID',
+    'REMOVE_DUPLICATE',
+    'STAGE'
 ];
 
 exports.record = function record(key, user, data) {
@@ -34,17 +37,10 @@ exports.record = function record(key, user, data) {
 };
 
 function addItem(key, user, data) {
-    return new Promise((resolve, reject) => {
-        const sql = `INSERT INTO AUDIT ([user], action, details)   
-                     OUTPUT inserted.id  
-                     VALUES (@user, @action, @details);`;
+    const query = {
+        text: `insert into audit ("user", action, details) values ($1, $2, $3);`,
+        values: [user, key, data]
+    };
 
-        const parameters = [
-            {column: 'user', type: TYPES.VarChar, value: user},
-            {column: 'action', type: TYPES.VarChar, value: key},
-            {column: 'details', type: TYPES.VarChar, value: data ? JSON.stringify(data) : null}
-        ];
-
-        execSql(sql, parameters, resolve, reject);
-    });
+    return db.query(query);
 }

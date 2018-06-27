@@ -41,12 +41,11 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     async function startFilling(username) {
         await dbClient.copyNomisIdsFromMaster();
         const pncs = await dbClient.getStagedPncs();
-
-        fillingQueue.start(username, pncs);
+        fillingQueue.start(username, pncs.rows);
     }
 
     async function fillNomisIdFromApi(username, pnc) {
-        const pncValue = pnc.OFFENDER_PNC.value;
+        const pncValue = pnc.offender_pnc;
         const nomisId = await findNomisId(username, pncValue);
         await fillNomisId(nomisId);
     }
@@ -91,16 +90,16 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
 
     async function startSending(username) {
         const pending = await dbClient.getPending();
-        sendingQueue.start(username, pending);
+        sendingQueue.start(username, pending.rows);
     }
 
     async function sendRelationToApi(username, record) {
         logger.debug('sendRelationToApi');
-        const nomisId = record.OFFENDER_NOMIS.value;
-        const staffId = record.STAFF_ID.value;
-        const first = record.STAFF_FIRST.value;
-        const last = record.STAFF_LAST.value;
-        const rowId = record.ID.value;
+        const nomisId = record.offender_nomis;
+        const staffId = record.staff_id;
+        const first = record.staff_first;
+        const last = record.staff_last;
+        const rowId = record.id;
 
         const result = await updateNomis(username, nomisId, staffId, first, last);
         await dbClient.updateWithNomisResult(rowId, result.rejection);

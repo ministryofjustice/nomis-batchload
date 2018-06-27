@@ -17,10 +17,9 @@ module.exports = function({logger, dbClient, authenticationMiddleware}) {
         logger.info('GET /audit');
         try {
             const audit = await dbClient.getAudit(config.audit.max);
-            const report = audit ? audit.map(r =>
-                [r.TIMESTAMP.value, r.USER.value, r.ACTION.value, r.DETAILS.value]) : [];
+
             res.render('audit', {
-                report,
+                report: audit.rows,
                 moment: require('moment')
             });
         } catch (error) {
