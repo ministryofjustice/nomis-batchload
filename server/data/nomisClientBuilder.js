@@ -1,8 +1,5 @@
 const config = require('../config');
-const logger = require('../../log.js');
-
 const superagent = require('superagent');
-
 const generateApiGatewayToken = require('../authentication/apiGateway');
 
 const timeoutSpec = {
@@ -12,12 +9,16 @@ const timeoutSpec = {
 
 const apiUrl = config.nomis.apiUrl;
 
-module.exports = function(token) {
+module.exports = (tokenStore, signInService) => username => {
+
+    const nomisGet = nomisGetBuilder(tokenStore, signInService, username);
+    const nomisPost = nomisPostBuilder(tokenStore, signInService, username);
+
     return {
         getNomisIdForPnc: function(pnc) {
             const path = `${apiUrl}/prisoners`;
             const query = {pncNumber: pnc};
-            return nomisGet(path, query, token);
+            return nomisGet({path, query});
         },
 
         postComRelation: function(nomisId, staffId, firstName, lastName) {
@@ -28,55 +29,106 @@ module.exports = function(token) {
                 firstName,
                 lastName
             };
-            return nomisPost(path, body, token);
+            return nomisPost({path, body});
         }
     };
 };
 
-async function nomisGet(path, query, token, headers = {}) {
+function nomisGetBuilder(tokenStore, signInService, username) {
 
-    try {
-        const gwToken = `Bearer ${generateApiGatewayToken()}`;
+    return async ({path, query = '', headers = {}, responseType = ''} = {}) => {
 
-        const result = await superagent
-            .get(path)
-            .query(query)
-            .set('Accept', 'application/json')
-            .set('Authorization', gwToken)
-            .set('Elite-Authorization', token)
-            .set(headers)
-            .timeout(timeoutSpec);
+        const tokens = tokenStore.get(username);
 
-        return result.body;
+        if (!tokens) {
+            throw new Error('no token');
+        }
 
-    } catch (error) {
-        logger.error('Error from NOMIS: ' + error);
-        logger.info(error.status);
-        logger.info(error.response.body);
-        throw error;
+        try {
+            const result = await superagent
+                .get(path)
+                .query(query)
+                .set('Authorization', gatewayTokenOrCopy(tokens.token))
+                .set('Elite-Authorization', tokens.token)
+                .set(headers)
+                .responseType(responseType)
+                .timeout(timeoutSpec);
+
+            return result.body;
+
+        } catch (error) {
+            if (canRetry(error, tokens)) {
+                return refreshAndRetry(username, {path, query, headers, responseType});
+            }
+
+            throw error;
+        }
+    };
+
+    function canRetry(error, tokens) {
+        const unauthorisedError = [400, 401, 403].includes(error.status);
+        const refreshAllowed = Date.now() - tokens.timestamp >= 5000;
+
+        return unauthorisedError && refreshAllowed;
+    }
+
+    async function refreshAndRetry(username, {path, query, headers, responseType}) {
+
+        await signInService.refresh(username);
+
+        const nomisGet = nomisGetBuilder(tokenStore, signInService, username);
+        return nomisGet({path, query, headers, responseType});
     }
 }
 
-async function nomisPost(path, body, token, headers = {}) {
+function nomisPostBuilder(tokenStore, signInService, username) {
 
-    try {
-        const gwToken = `Bearer ${generateApiGatewayToken()}`;
+    return async ({path, body = {}, headers = {}, responseType = ''} = {}) => {
 
-        const result = await superagent
-            .post(path)
-            .send(body)
-            .set('Accept', 'application/json')
-            .set('Authorization', gwToken)
-            .set('Elite-Authorization', token)
-            .set(headers)
-            .timeout(timeoutSpec);
+        const tokens = tokenStore.get(username);
 
-        return result.status;
+        if (!tokens) {
+            throw new Error('no token');
+        }
 
-    } catch (error) {
-        logger.error('Error from NOMIS: ' + error);
-        logger.info(error.status);
-        logger.info(error.response.body);
-        throw error;
+        try {
+            const result = await superagent
+                .post(path)
+                .send(body)
+                .set('Accept', 'application/json')
+                .set('Authorization', gatewayTokenOrCopy(tokens.token))
+                .set('Elite-Authorization', tokens.token)
+                .set(headers)
+                .responseType(responseType)
+                .timeout(timeoutSpec);
+
+            return result.body;
+
+        } catch (error) {
+            if (canRetry(error, tokens)) {
+                return refreshAndRetryPost(username, {path, body, headers, responseType});
+            }
+
+            throw error;
+        }
+    };
+
+    function canRetry(error, tokens) {
+        const unauthorisedError = [400, 401, 403].includes(error.status);
+        const refreshAllowed = Date.now() - tokens.timestamp >= 5000;
+
+        return unauthorisedError && refreshAllowed;
     }
+
+    async function refreshAndRetryPost(username, {path, body, headers, responseType}) {
+
+        await signInService.refresh(username);
+
+        const nomisPost = nomisPostBuilder(tokenStore, signInService, username);
+        return nomisPost({path, body, headers, responseType});
+    }
+}
+
+function gatewayTokenOrCopy(token) {
+    return config.nomis.apiGatewayEnabled === 'yes' ? generateApiGatewayToken() : token;
 }

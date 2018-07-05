@@ -9,23 +9,23 @@ describe('batchloadService', () => {
     beforeEach(() => {
         dbClient = {
             copyNomisIdsFromMaster: sandbox.stub().returnsPromise().resolves(),
-            getStagedIncomplete: sandbox.stub().returnsPromise().resolves(
-                [{ID: {value: 1}, OFFENDER_PNC: {value: '123'}}]),
-            getStagedPncs: sandbox.stub().returnsPromise().resolves([
-                {OFFENDER_PNC: {value: '123'}},
-                {OFFENDER_PNC: {value: '456'}}
-            ]),
+            getStagedIncomplete: sandbox.stub().returnsPromise().resolves({rows:
+                [{id: 1, offender_pnc: '123'}]}),
+            getStagedPncs: sandbox.stub().returnsPromise().resolves({rows: [
+                {offender_pnc: '123'},
+                {offender_pnc: '456'}
+            ]}),
             fillNomisId: sandbox.stub().returnsPromise().resolves(),
-            findNomisId: sandbox.stub().returnsPromise().resolves([{OFFENDER_NOMIS: {value: 'abc'}}]),
-            getPending: sandbox.stub().returnsPromise().resolves([{
-                ID: {value: 1}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
-                OFFENDER_NOMIS: {value: 2}, OFFENDER_PNC: {value: 3},
-                STAFF_ID: {value: 4}, STAFF_FIRST: {value: 5}, STAFF_LAST: {value: 6}
+            findNomisId: sandbox.stub().returnsPromise().resolves({rows: [{offender_nomis: 'abc'}]}),
+            getPending: sandbox.stub().returnsPromise().resolves({rows: [{
+                id: 1, timestamp: '2017-12-21 0:0:0.0',
+                offender_nomis: 2, offender_pnc: 3,
+                staff_id: 4, staff_first: 5, staff_last: 6
             }, {
-                ID: {value: 12}, TIMESTAMP: {value: '2017-12-21 0:0:0.0'},
-                OFFENDER_NOMIS: {value: 22}, OFFENDER_PNC: {value: 32},
-                STAFF_ID: {value: 42}, STAFF_FIRST: {value: 52}, STAFF_LAST: {value: 62}
-            }]),
+                    id: 21, timestamp: '2017-12-21 0:0:0.0',
+                    offender_nomis: 22, offender_pnc: 23,
+                    staff_id: 24, staff_first: 25, staff_last: 26
+            }]}),
             markFillRejected: sandbox.stub().returnsPromise().resolves(),
             markProcessed: sandbox.stub().returnsPromise().resolves(),
             updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
@@ -37,6 +37,8 @@ describe('batchloadService', () => {
             postComRelation: sandbox.stub().returnsPromise().resolves()
         };
 
+        const nomisClientBuilder = sandbox.stub().returns(nomisClient);
+
         const audit = {
             record: sandbox.stub()
         };
@@ -45,7 +47,7 @@ describe('batchloadService', () => {
             signIn: sandbox.stub().returns({token: 'fake-system-token'})
         };
 
-        service = createBatchloadService(nomisClient, dbClient, audit, fakeSignInService);
+        service = createBatchloadService(nomisClientBuilder, dbClient, audit, fakeSignInService);
     });
 
     afterEach(() => {
@@ -65,7 +67,7 @@ describe('batchloadService', () => {
         });
 
         it('should ask nomis for an id if it cant find one', async () => {
-            await service.fill();
+            await service.fill('username');
             expect(nomisClient.getNomisIdForPnc).to.be.calledOnce();
             expect(nomisClient.getNomisIdForPnc).to.be.calledWith('123');
         });

@@ -15,12 +15,12 @@ block content
                 th Action
                 th Info
         tbody
-            each entry in report
+            each row in report
                 tr
-                    td #{moment(entry[0]).format('DD/MM/YYYY - HH:mm')}
-                    td #{entry[1]}
-                    td #{entry[2]}
-                    td #{entry[3]}
+                    td #{moment(row.timestamp).format('DD/MM/YYYY - HH:mm')}
+                    td #{row.user}
+                    td #{row.action}
+                    td #{JSON.stringify(row.details)}
 
 
     br

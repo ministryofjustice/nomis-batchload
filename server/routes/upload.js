@@ -25,6 +25,9 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     });
 
     async function getActivityStateData() {
+        const uploadInvalid = await dbClient.getUploadInvalidCount();
+        const uploadValid = await dbClient.getUploadValidCount();
+        const uploadDuplicate = await dbClient.getUploadDuplicateCount();
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
         const staged = await dbClient.getStagedCount();
         const pending = await dbClient.getPendingCount();
@@ -35,11 +38,14 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         const isSending = batchloadService.isSending();
 
         return {
-            stagedIncomplete: stagedIncomplete[0].COUNT.value,
-            staged: staged[0].COUNT.value,
-            pending: pending[0].COUNT.value,
-            rejected: rejected[0].COUNT.value,
-            sent: sent[0].COUNT.value,
+            uploadInvalid: uploadInvalid.rows[0].count,
+            uploadValid: uploadValid.rows[0].count,
+            uploadDuplicate: uploadDuplicate.rows[0].count,
+            stagedIncomplete: stagedIncomplete.rows[0].count,
+            staged: staged.rows[0].count,
+            pending: pending.rows[0].count,
+            rejected: rejected.rows[0].count,
+            sent: sent.rows[0].count,
             isFilling,
             isSending
         };
@@ -71,11 +77,27 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
 
         try {
             audit.record('UPLOAD_STARTED', req.user.email);
-            await dbClient.clearStaged();
+            await dbClient.clearUpload();
             const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
             audit.record('UPLOAD_DONE', req.user.email, {rows: insertedCount});
             res.redirect('/');
 
+        } catch (error) {
+            logger.error(error);
+
+            const detail = error.detail ? error.detail : '';
+
+            res.redirect('/?error=' + error + ' - ' + detail);
+        }
+    });
+
+    router.get('/stage', async (req, res, next) => {
+        logger.info('GET /stage');
+        try {
+            audit.record('STAGE', req.user.email);
+            await dbClient.clearStaged();
+            await dbClient.mergeUploadToStage();
+            res.redirect('/');
         } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);
@@ -85,7 +107,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/clearStaged', async (req, res, next) => {
         logger.info('GET /clearStaged');
         try {
-            audit.record('CLEAR', req.user.email);
+            audit.record('CLEAR_STAGED', req.user.email);
             await dbClient.clearStaged();
             res.redirect('/');
         } catch (error) {
@@ -100,7 +122,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             logger.info('Starting fill');
             try {
                 audit.record('FILL_STARTED', req.user.email);
-                await batchloadService.fill();
+                await batchloadService.fill(req.user.username);
             } catch (error) {
                 logger.error(error);
                 res.redirect('/?error=' + error);
@@ -138,7 +160,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             try {
                 audit.record('SEND_STARTED', req.user.email);
-                await batchloadService.send();
+                await batchloadService.send(req.user.username);
             } catch (error) {
                 logger.error(error);
                 res.redirect('/?error=' + error);
@@ -159,19 +181,49 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
     });
 
+    router.get('/viewInvalid', async (req, res, next) => {
+        logger.info('GET /viewInvalid');
+
+        try {
+            const invalid = await dbClient.getUploadInvalid();
+
+            res.render('badUploadReport', {
+                heading: 'Invalid',
+                rows: invalid.rows,
+                moment: require('moment')
+            });
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/viewDuplicates', async (req, res, next) => {
+        logger.info('GET /viewDuplicates');
+
+        try {
+            const duplicates = await dbClient.getUploadDuplicates();
+
+            res.render('badUploadReport', {
+                heading: 'Duplicates',
+                rows: duplicates.rows,
+                moment: require('moment')
+            });
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
     router.get('/viewIncomplete', async (req, res, next) => {
         logger.info('GET /viewIncomplete');
 
         try {
             const incomplete = await dbClient.getStagedIncomplete();
 
-            const report = incomplete.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-                r.OFFENDER_PNC.value, r.STAFF_ID.value, r.STAFF_FIRST.value, r.STAFF_LAST.value, r.REJECTION.value]
-            );
-
             res.render('errorReport', {
                 heading: 'Incomplete',
-                report,
+                rows: incomplete.rows,
                 moment: require('moment')
             });
         } catch (error) {
@@ -186,18 +238,50 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         try {
             const rejected = await dbClient.getRejected();
 
-            const report = rejected ? rejected.map(r => [r.ID.value, r.TIMESTAMP.value, r.OFFENDER_NOMIS.value,
-                r.OFFENDER_PNC.value, r.STAFF_ID.value, r.STAFF_FIRST.value, r.STAFF_LAST.value, r.REJECTION.value]
-            ) : [];
-
             res.render('errorReport', {
                 heading: 'Nomis Rejections',
-                report,
+                rows: rejected.rows,
                 moment: require('moment')
             });
         } catch (error) {
             logger.warn('warn');
             logger.error('error');
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/removeInvalid', async (req, res, next) => {
+        logger.info('GET /removeInvalid');
+        try {
+            audit.record('REMOVE_INVALID', req.user.email);
+            await dbClient.removeInvalid();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/removeDuplicate', async (req, res, next) => {
+        logger.info('GET /removeDuplicate');
+        try {
+            audit.record('REMOVE_DUPLICATE', req.user.email);
+            await dbClient.removeDuplicate();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/clearUpload', async (req, res, next) => {
+        logger.info('GET /clearUpload');
+        try {
+            audit.record('CLEAR_UPLOAD', req.user.email);
+            await dbClient.clearUpload();
+            res.redirect('/');
+        } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);
         }

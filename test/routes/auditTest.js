@@ -10,7 +10,7 @@ const auth = require('../mockAuthentication');
 const authenticationMiddleware = auth.authenticationMiddleware;
 
 const dbClientStub = {
-    getAudit: sandbox.stub().returnsPromise().resolves([])
+    getAudit: sandbox.stub().returnsPromise().resolves({rows: []})
 };
 
 const loggerStub = {

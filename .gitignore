@@ -20,3 +20,4 @@ build-info.json
 .env
 coverage
 .nyc_output
+root.cert

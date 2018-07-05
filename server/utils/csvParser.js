@@ -9,12 +9,11 @@ module.exports = function(logger, dbClient) {
             const parserConfig = {columns: true, delimiter: delimiter, skip_empty_lines: true};
             const parser = parse(parserConfig);
 
-            const {connection, bulkload} = await dbClient.getStageBulkload();
-
             let addedCount = 0;
+            let records = [];
 
             parser.on('data', row => {
-                bulkload.addRow(formatRow(columns, row));
+                records.push(formatRow(columns, row));
                 addedCount++;
             });
 
@@ -23,10 +22,22 @@ module.exports = function(logger, dbClient) {
                 return reject(err.message);
             });
 
-            parser.on('finish', function() {
-                connection.execBulkLoad(bulkload);
+            parser.on('finish', async function() {
+
+                try {
+                    const result = await dbClient.bulkInsert(records);
+                    logger.info('bulkinsert result:');
+                    logger.info(result);
+
+                } catch(error) {
+                    logger.error('bulkinsert error:');
+                    logger.error(error);
+                    reject(error);
+                }
+
                 return resolve(addedCount);
             });
+
 
             parser.write(data);
             parser.end();
