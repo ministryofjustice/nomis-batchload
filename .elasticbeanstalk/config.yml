@@ -1,8 +1,8 @@
 branch-defaults:
   master:
-    environment: nomisbatchload-mock
+    environment: nomis-batchload-stage
 deploy:
   artifact: Dockerrun.aws.json
 global:
-  application_name: nomisbatchload
+  application_name: nomis-batchload
   default_region: eu-west-2

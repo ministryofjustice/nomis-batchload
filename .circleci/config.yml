@@ -95,44 +95,21 @@ jobs:
              docker push mojdigitalstudio/nomisbatchload:$BUILD_VERSION
              docker push mojdigitalstudio/nomisbatchload:latest
 
-#  deploy_release_to_eb:
-#      <<: *defaults
-#      steps:
-#        - checkout
-#        - attach_workspace:
-#            at: ~/noms-digital-studio/nomisbatchload
-#        - deploy:
-#            name: Install elastic beanstalk CLI
-#            command: |
-#              sudo apt-get install python-pip python-dev
-#              pip install --user 'six>-1.9.0' awsebcli --ignore-installed
-#        - deploy:
-#            name: Deploy to Elastic Beanstalk Dev
-#            command: |
-#              VERSION=$(egrep buildNumber build-info.json | awk -F"\"" '{print $4}')
-#              yarn run plant-beanstalk ${VERSION}
-#              ~/.local/bin/eb deploy --process --verbose --label ${VERSION}
-#        - persist_to_workspace:
-#            root: .
-#            paths:
-#              - Dockerrun.aws.json
 
-#  deploy_stage:
-#      <<: *defaults
-#      steps:
-#        - checkout
-#        - attach_workspace:
-#            at: ~/noms-digital-studio/nomisbatchload
-#        - deploy:
-#            name: Install elastic beanstalk CLI
-#            command: |
-#              sudo apt-get install python-pip python-dev
-#              pip install --user 'six>-1.9.0' awsebcli --ignore-installed
-#        - deploy:
-#            name: Deploy to Elastic Beanstalk Stage
-#            command: |
-#              VERSION=$(egrep nomisbatchload Dockerrun.aws.json | awk -F"\"" '{print $4}' |  awk -F":" '{print $2}')
-#              ~/.local/bin/eb deploy nomisbatchload-stage --label ${VERSION}
+  deploy_release_eb:
+      working_directory: ~/app
+      docker:
+        - image: mojdigitalstudio/circleci-node-awsebcli
+      steps:
+        - checkout
+        - attach_workspace:
+            at:  ~/noms-digital-studio/nomisbatchload
+        - deploy:
+            name: Deploy to Elastic Beanstalk Stage
+            command: |
+              VERSION=$(egrep buildNumber build-info.json | awk -F"\"" '{print $4}')
+              yarn run plant-beanstalk ${VERSION}
+              ~/.local/bin/eb deploy --process --verbose --label ${VERSION}
 
 workflows:
   version: 2
@@ -149,13 +126,9 @@ workflows:
             branches:
               only:
                 - master
-#      - deploy_release_to_eb:
-#          requires:
-#            - build_docker
-#      - hold:
-#          type: approval
-#          requires:
-#            - deploy_release_to_eb
-#      - deploy_stage:
-#          requires:
-#            - hold
+      - deploy_release_to_eb:
+          requires:
+            - build_docker
+          filters:
+            branches:
+              only: master

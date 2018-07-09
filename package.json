@@ -27,7 +27,8 @@
         "knex-migrate": "knex-migrate",
         "migrate": "knex migrate:latest",
         "seed": "knex seed:run",
-        "prepare": "npm run snyk-protect"
+        "prepare": "npm run snyk-protect",
+        "plant-beanstalk": "node ./bin/plant-beanstalk"
     },
     "dependencies": {
         "applicationinsights": "^0.19.0",
