@@ -97,7 +97,7 @@ jobs:
 
 
   deploy_release_eb:
-      working_directory: ~/app
+      working_directory: ~/noms-digital-studio/nomisbatchload
       docker:
         - image: mojdigitalstudio/circleci-node-awsebcli
       steps:
