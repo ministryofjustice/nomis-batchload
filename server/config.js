@@ -44,7 +44,7 @@ module.exports = {
         licenceRolePrefix: get('LICENCE_ROLE_PREFIX', 'LICENCE'),
         apiClientId: get('API_CLIENT_ID', 'licences'),
         apiClientSecret: get('API_CLIENT_SECRET', 'clientsecret'),
-        batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'licencesadmin'),
+        batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'batchadmin'),
         batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
         batchUserRole: get('BATCH_USER_ROLE', 'ADMIN'),
         timeout: {

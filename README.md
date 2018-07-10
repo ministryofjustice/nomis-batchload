@@ -40,10 +40,7 @@ The following environment variables are used and values should be supplied
 * NOMIS_API_URL - url for nomis elite2 api entry point eg http://localhost:9090/elite2api
 * NOMIS_GW_TOKEN - MoJ dev token for nomis elite2 access
 * NOMIS_GW_KEY - Base64 encoded private key corresponding to the public key used when generating the NOMIS_GW_TOKEN
-* BATCH_USER_ROLES - Role name allowing access to the batchload UI, omitting any prefix, eg LICENCE_ADMIN
-* BATCH_SYSTEM_USER_ROLES - Role name for the system user, omitting any prefix, eg SYSTEM_USER
-* BATCH_SYSTEM_USER - System user name
-* BATCH_SYSTEM_PASSWORD - password for the system user
+* BATCH_USER_ROLE - Role name allowing access to the batchload UI, omitting any prefix, eg LICENCE_ADMIN
 
 For the database:
 * DB_USER - username for DB access
