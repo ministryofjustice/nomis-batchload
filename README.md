@@ -97,3 +97,45 @@ yarn run knex seed:make <script-name>
 ```
 CREATE DATABASE nomisbatch CONTAINMENT = PARTIAL
 ``` 
+
+
+# Delius Extract CSV Format
+
+There are some sample CSV files in src/test/resources. In server/config.js there is a csv columns config object
+that specifies the column names that will be consumed from the CSV. Other columsn will be ignored.
+
+eg
+
+    ```
+    csv: {
+        columns: {
+            offenderNomis: 'NOMS No',
+            offenderPnc: 'PNC No',
+            staffId: 'Staff Cd (OfM)',
+            staffFirst: 'Staff First',
+            staffLast: 'Staff Last'
+        },
+        delimiter: ','
+    }
+    ```
+
+would work for a CSV file such as
+
+```
+Active Offender Y/N,In Custody Y/N,CRN,PNC No,NOMS No,Staff Cd (OfM), Staff First, Staff Last
+Y,Y,S663770,1987/0081140U,A8360CL,ALLUATU,first,last
+Y,Y,E035316,2009/0435434J,A7352DW,ASPC111,first,last
+Y,Y,T021020,1995/0118995M,A2436AP,ASPC111,first,last
+
+```    
+where the columns Active Offender Y/N, In Custody Y/N, and CRN would all be ignored, or alternately
+
+```
+PNC No,NOMS No,Staff Cd (OfM), Staff First, Staff Last
+1987/0081140U,A8360CL,ALLUATU,first,last
+2009/0435434J,A7352DW,ASPC111,first,last
+1995/0118995M,A2436AP,ASPC111,first,last
+
+```    
+
+TODO NB Don't know if we get staff names from Delius or if this was a leftover from early guesses.
