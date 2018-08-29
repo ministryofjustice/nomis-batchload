@@ -137,36 +137,28 @@ async function getUserProfile(token, username) {
 }
 
 async function getRoleCode(token) {
-    const role = await getRole(token);
-    const roleCode = role.roleCode.substring(role.roleCode.lastIndexOf('_') + 1);
+    const roleCode = await getRoleWithCode(token, config.nomis.batchUserRole);
 
-    if(roleCode.indexOf(config.nomis.batchUserRole) > -1) {
+    if (roleCode) {
         logger.info(`Elite2 got batch user role code [${roleCode}]`);
         return roleCode;
     }
 
-    logger.info(`Elite2 got user role code [${roleCode}]`);
+    logger.info(`Elite2 user does not have role [${config.nomis.batchUserRole}]`);
     throw new Error('Login error - no acceptable batch user role');
 }
 
-async function getRole(token) {
+async function getRoleWithCode(token, roleCode) {
 
     const rolesResult = await nomisGet('/users/me/roles', token);
     const roles = rolesResult.body;
     logger.info(`Roles response [${JSON.stringify(roles)}]`);
 
-    if (roles && roles.length > 0) {
-        const role = roles.find(role => {
-            return role.roleCode.includes(config.nomis.licenceRolePrefix);
-        });
-
-        logger.info(`Selected role: ${role.roleCode}`);
-        if (role) {
-            return role;
-        }
+    if (!roles) {
+        return null;
     }
 
-    throw new Error('Login error - no acceptable role');
+    return roles.find(role => role.roleCode === roleCode);
 }
 
 function nomisGet(path, token) {
