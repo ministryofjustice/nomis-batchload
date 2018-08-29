@@ -46,7 +46,7 @@ module.exports = {
         apiClientSecret: get('API_CLIENT_SECRET', 'clientsecret'),
         batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'batchadmin'),
         batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
-        batchUserRole: get('BATCH_USER_ROLE', 'ADMIN'),
+        batchUserRole: get('BATCH_USER_ROLE', 'NOMIS_BATCHLOAD'),
         timeout: {
             response: 2000,
             deadline: 2500
