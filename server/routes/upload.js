@@ -76,10 +76,10 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
 
         try {
-            audit.record('UPLOAD_STARTED', req.user.email);
+            audit.record('UPLOAD_STARTED', req.user.staffId);
             await dbClient.clearUpload();
             const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
-            audit.record('UPLOAD_DONE', req.user.email, {rows: insertedCount});
+            audit.record('UPLOAD_DONE', req.user.staffId, {rows: insertedCount});
             res.redirect('/');
 
         } catch (error) {
@@ -94,7 +94,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stage', async (req, res, next) => {
         logger.info('GET /stage');
         try {
-            audit.record('STAGE', req.user.email);
+            audit.record('STAGE', req.user.staffId);
             await dbClient.clearStaged();
             await dbClient.mergeUploadToStage();
             res.redirect('/');
@@ -107,7 +107,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/clearStaged', async (req, res, next) => {
         logger.info('GET /clearStaged');
         try {
-            audit.record('CLEAR_STAGED', req.user.email);
+            audit.record('CLEAR_STAGED', req.user.staffId);
             await dbClient.clearStaged();
             res.redirect('/');
         } catch (error) {
@@ -121,7 +121,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             logger.info('Starting fill');
             try {
-                audit.record('FILL_STARTED', req.user.email);
+                audit.record('FILL_STARTED', req.user.staffId);
                 await batchloadService.fill(req.user.username);
             } catch (error) {
                 logger.error(error);
@@ -134,7 +134,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stopFill', async (req, res, next) => {
         logger.info('GET /stopFill');
         try {
-            audit.record('FILL_STOPPED', req.user.email);
+            audit.record('FILL_STOPPED', req.user.staffId);
             batchloadService.stopFilling();
             res.redirect('/');
         } catch (error) {
@@ -146,7 +146,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/merge', async (req, res, next) => {
         logger.info('GET /merge');
         try {
-            audit.record('MERGE', req.user.email);
+            audit.record('MERGE', req.user.staffId);
             await dbClient.mergeStageToMaster();
             res.redirect('/');
         } catch (error) {
@@ -159,7 +159,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /send');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             try {
-                audit.record('SEND_STARTED', req.user.email);
+                audit.record('SEND_STARTED', req.user.staffId);
                 await batchloadService.send(req.user.username);
             } catch (error) {
                 logger.error(error);
@@ -172,7 +172,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stopSend', async (req, res, next) => {
         logger.info('GET /stopSend');
         try {
-            audit.record('SEND_STOPPED', req.user.email);
+            audit.record('SEND_STOPPED', req.user.staffId);
             await batchloadService.stopSending();
             res.redirect('/');
         } catch (error) {
@@ -254,7 +254,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/removeInvalid', async (req, res, next) => {
         logger.info('GET /removeInvalid');
         try {
-            audit.record('REMOVE_INVALID', req.user.email);
+            audit.record('REMOVE_INVALID', req.user.staffId);
             await dbClient.removeInvalid();
             res.redirect('/');
         } catch (error) {
@@ -266,7 +266,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/removeDuplicate', async (req, res, next) => {
         logger.info('GET /removeDuplicate');
         try {
-            audit.record('REMOVE_DUPLICATE', req.user.email);
+            audit.record('REMOVE_DUPLICATE', req.user.staffId);
             await dbClient.removeDuplicate();
             res.redirect('/');
         } catch (error) {
@@ -278,7 +278,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/clearUpload', async (req, res, next) => {
         logger.info('GET /clearUpload');
         try {
-            audit.record('CLEAR_UPLOAD', req.user.email);
+            audit.record('CLEAR_UPLOAD', req.user.staffId);
             await dbClient.clearUpload();
             res.redirect('/');
         } catch (error) {
