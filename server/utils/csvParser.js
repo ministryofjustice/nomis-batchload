@@ -24,6 +24,12 @@ module.exports = function(logger, dbClient) {
 
             parser.on('finish', async function() {
 
+                const lineCount = parser.lines;
+                const recordCount = parser.count;
+
+                logger.info('Number of lines in file: ' + lineCount);
+                logger.info('Number of records parsed: ' + recordCount);
+
                 try {
                     const result = await dbClient.bulkInsert(records);
                     logger.info('bulkinsert result:');
@@ -35,7 +41,7 @@ module.exports = function(logger, dbClient) {
                     reject(error);
                 }
 
-                return resolve(addedCount);
+                return resolve({lineCount, recordCount, addedCount});
             });
 
 

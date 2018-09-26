@@ -19,7 +19,12 @@ block content
                         input(type="hidden" name="_csrf" value=csrfToken)
                         input(type="file" name="datafile")
                         input#continueBtn.requiredButton.button(type="submit" value="Upload")
-
+                div.column-half
+                    if counts
+                        h1.heading-large Upload Result
+                        p Number of lines including headings row: #{counts.lineCount}
+                        p Number of records after headings: #{counts.recordCount}
+                        p Number of records staged: #{counts.addedCount}
 
             div.column-full
                 div.column-half
@@ -40,7 +45,7 @@ block content
 
                 div.column-half
                     h1.heading-large Stage
-                    p Ready to stage:
+                    p Uploaded valid rows ready to stage:
                         =" "
                         span#uploadValidCount  #{uploadValid}
                     if(isSending || isFilling)
@@ -53,7 +58,7 @@ block content
                         else if uploadValid > 0
                             a.button(href="stage" role="button") Stage uploaded records
                         else
-                            p Nothing to stage
+                            p.bold Nothing to stage
 
             div.column-full
                 div.column-half

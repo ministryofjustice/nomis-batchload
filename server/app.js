@@ -5,6 +5,8 @@ const expressWinston = require('express-winston');
 const addRequestId = require('express-request-id')();
 const moment = require('moment');
 
+const flash = require('connect-flash');
+
 const fileUpload = require('express-fileupload');
 
 const bodyParser = require('body-parser');
@@ -220,6 +222,8 @@ module.exports = function createApp({
     app.get('/feedback', (req, res) => {
         return res.render('feedback', {returnURL: req.get('referer')});
     });
+
+    app.use(flash());
 
     app.use('/login', createSignInRouter(passport));
 
