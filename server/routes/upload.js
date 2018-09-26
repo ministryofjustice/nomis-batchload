@@ -17,7 +17,11 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         try {
             const resultData = {result: req.query.result, error: req.query.error};
             const activityData = await getActivityStateData();
-            res.render('upload', {...resultData, ...activityData});
+
+            const countData = req.flash('counts');
+            const counts = countData ? countData[0] : {};
+
+            res.render('upload', {...resultData, ...activityData, counts});
         } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);
@@ -55,6 +59,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /activityStatus');
         try {
             const activityData = await getActivityStateData();
+
             res.status(200).json(activityData);
         } catch (error) {
             logger.error(error);
@@ -78,8 +83,10 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         try {
             audit.record('UPLOAD_STARTED', req.user.staffId);
             await dbClient.clearUpload();
-            const insertedCount = await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
-            audit.record('UPLOAD_DONE', req.user.staffId, {rows: insertedCount});
+            const {lineCount, recordCount, addedCount} =
+                await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
+            audit.record('UPLOAD_DONE', req.user.staffId, {rows: addedCount});
+            req.flash('counts', {lineCount, recordCount, addedCount});
             res.redirect('/');
 
         } catch (error) {
