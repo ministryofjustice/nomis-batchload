@@ -1,2 +1,2 @@
-Active Offender Y/N, In Custody Y/N,CRN,PNC No,NOMS No,Staff Cd (OfM)
-Y,Y,crn,pnc1,nomis1,1
+PNC_NUMBER,NOMS_NUMBER,OFFICER_CODE
+pnc1,nomis1,1
