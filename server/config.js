@@ -48,8 +48,8 @@ module.exports = {
         batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
         batchUserRole: get('BATCH_USER_ROLE', 'NOMIS_BATCHLOAD'),
         timeout: {
-            response: 2000,
-            deadline: 2500
+            response: 8000,
+            deadline: 8500
         },
         getRateLimit: 200,
         postRateLimit: 200
