@@ -61,7 +61,7 @@ module.exports = function(logger, dbClient) {
         const record = [nomis, pnc, staffId, staffFirst, staffLast];
 
         return record.map(s => {
-            const trimmed = s.trim();
+            const trimmed = s ? s.trim() : '';
             return trimmed.length > 0 ? trimmed : null;
         });
     }
