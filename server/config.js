@@ -18,11 +18,11 @@ module.exports = {
 
     csv: {
         columns: {
-            offenderNomis: 'NOMS_NUMBER',
-            offenderPnc: 'PNC_NUMBER',
-            staffId: 'OFFICER_CODE',
-            staffFirst: 'FORENAME',
-            staffLast: 'SURNAME'
+            offenderNomis: 'NOMS No',
+            offenderPnc: 'PNC No',
+            staffId: 'Staff Cd (OfM)',
+            staffFirst: 'Staff First',
+            staffLast: 'Staff Last'
         },
         delimiter: ','
     },
