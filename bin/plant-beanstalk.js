@@ -23,7 +23,7 @@ const output = JSON.stringify(dockerrun, null, 2);
 
 fs.writeFileSync(path.resolve(__dirname, '../Dockerrun.aws.json'), output);
 
-var zip = new AdmZip();
+const zip = new AdmZip();
 zip.addLocalFile(__dirname + '/../Dockerrun.aws.json');
 zip.addLocalFolder(__dirname + '/../.ebextensions', '.ebextensions');
 zip.writeZip(__dirname + '/../' + version + '.zip');
