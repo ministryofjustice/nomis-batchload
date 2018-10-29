@@ -2,7 +2,7 @@ branch-defaults:
   master:
     environment: nomis-batchload-stage
 deploy:
-  artifact: Dockerrun.aws.json
+  artifact: ${VERSION}.zip
 global:
   application_name: nomis-batchload
   default_region: eu-west-2
