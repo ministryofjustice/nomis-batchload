@@ -25,5 +25,5 @@ fs.writeFileSync(path.resolve(__dirname, '../Dockerrun.aws.json'), output);
 
 const zip = new AdmZip();
 zip.addLocalFile(__dirname + '/../Dockerrun.aws.json');
-zip.addLocalFolder(__dirname + '/../.ebextensions', '.ebextensions');
+zip.addLocalFile(__dirname + '/../.ebextensions/nginx.config', '.ebextensions');
 zip.writeZip(__dirname + '/../deploy.zip');
