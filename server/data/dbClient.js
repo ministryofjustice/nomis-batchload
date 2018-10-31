@@ -10,6 +10,10 @@ module.exports = {
         return db.query(`delete from om_relations_staging`);
     },
 
+    clearMaster: function() {
+        return db.query(`delete from om_relations`);
+    },
+
     clearUpload: function() {
         return db.query(`delete from om_relations_upload`);
     },

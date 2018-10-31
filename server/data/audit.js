@@ -7,6 +7,7 @@ const keys = [
     'UPLOAD_DONE',
     'CLEAR_STAGED',
     'CLEAR_UPLOAD',
+    'CLEAR_MASTER',
     'FILL_STARTED',
     'FILL_STOPPED',
     'FILL_DONE',

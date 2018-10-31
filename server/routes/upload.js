@@ -129,6 +129,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
     });
 
+    router.get('/clearMaster', async (req, res, next) => {
+        logger.info('GET /clearMaster');
+        try {
+            audit.record('CLEAR_MASTER', req.user.username);
+            await dbClient.clearMaster();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
     router.get('/fill', async (req, res, next) => {
         logger.info('GET /fill');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
