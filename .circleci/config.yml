@@ -110,6 +110,8 @@ jobs:
               VERSION=$(egrep buildNumber build-info.json | awk -F"\"" '{print $4}')
               yarn run plant-beanstalk ${VERSION}
               ~/.local/bin/eb deploy --process --verbose --label ${VERSION}
+        - store_artifacts:
+              path: deploy.zip
 
 workflows:
   version: 2
