@@ -5,6 +5,9 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     const router = express.Router();
     router.use(authenticationMiddleware());
 
+    const fillingRate = config.nomis.findNomisIdIntervalMillis;
+    const sendingRate = config.nomis.sendRelationshipIntervalMillis;
+
     router.use(function(req, res, next) {
         if (typeof req.csrfToken === 'function') {
             res.locals.csrfToken = req.csrfToken();
@@ -14,6 +17,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
 
     router.get('/', async (req, res, next) => {
         logger.info('GET /upload');
+
         try {
             const resultData = {result: req.query.result, error: req.query.error};
             const activityData = await getActivityStateData();
@@ -21,7 +25,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             const countData = req.flash('counts');
             const counts = countData ? countData[0] : {};
 
-            res.render('upload', {...resultData, ...activityData, counts});
+            res.render('upload', {...resultData, ...activityData, counts, fillingRate, sendingRate});
         } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);
@@ -33,6 +37,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         const uploadValid = await dbClient.getUploadValidCount();
         const uploadDuplicate = await dbClient.getUploadDuplicateCount();
         const stagedIncomplete = await dbClient.getStagedIncompleteCount();
+        const stagedRejected = await dbClient.getStagedRejectedCount();
         const staged = await dbClient.getStagedCount();
         const pending = await dbClient.getPendingCount();
         const rejected = await dbClient.getRejectedCount();
@@ -46,6 +51,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             uploadValid: uploadValid.rows[0].count,
             uploadDuplicate: uploadDuplicate.rows[0].count,
             stagedIncomplete: stagedIncomplete.rows[0].count,
+            stagedRejected: stagedRejected.rows[0].count,
             staged: staged.rows[0].count,
             pending: pending.rows[0].count,
             rejected: rejected.rows[0].count,
@@ -81,11 +87,11 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
 
         try {
-            audit.record('UPLOAD_STARTED', req.user.staffId);
+            audit.record('UPLOAD_STARTED', req.user.username);
             await dbClient.clearUpload();
             const {lineCount, recordCount, addedCount} =
                 await csvParser.parseCsv(datafile.data, config.csv.columns, config.csv.delimiter);
-            audit.record('UPLOAD_DONE', req.user.staffId, {rows: addedCount});
+            audit.record('UPLOAD_DONE', req.user.username, {rows: addedCount});
             req.flash('counts', {lineCount, recordCount, addedCount});
             res.redirect('/');
 
@@ -101,7 +107,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stage', async (req, res, next) => {
         logger.info('GET /stage');
         try {
-            audit.record('STAGE', req.user.staffId);
+            audit.record('STAGE', req.user.username);
             await dbClient.clearStaged();
             await dbClient.mergeUploadToStage();
             res.redirect('/');
@@ -114,7 +120,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/clearStaged', async (req, res, next) => {
         logger.info('GET /clearStaged');
         try {
-            audit.record('CLEAR_STAGED', req.user.staffId);
+            audit.record('CLEAR_STAGED', req.user.username);
             await dbClient.clearStaged();
             res.redirect('/');
         } catch (error) {
@@ -128,7 +134,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             logger.info('Starting fill');
             try {
-                audit.record('FILL_STARTED', req.user.staffId);
+                audit.record('FILL_STARTED', req.user.username);
                 await batchloadService.fill(req.user.username);
             } catch (error) {
                 logger.error(error);
@@ -141,7 +147,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stopFill', async (req, res, next) => {
         logger.info('GET /stopFill');
         try {
-            audit.record('FILL_STOPPED', req.user.staffId);
+            audit.record('FILL_STOPPED', req.user.username);
             batchloadService.stopFilling();
             res.redirect('/');
         } catch (error) {
@@ -153,7 +159,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/merge', async (req, res, next) => {
         logger.info('GET /merge');
         try {
-            audit.record('MERGE', req.user.staffId);
+            audit.record('MERGE', req.user.username);
             await dbClient.mergeStageToMaster();
             res.redirect('/');
         } catch (error) {
@@ -166,7 +172,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /send');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             try {
-                audit.record('SEND_STARTED', req.user.staffId);
+                audit.record('SEND_STARTED', req.user.username);
                 await batchloadService.send(req.user.username);
             } catch (error) {
                 logger.error(error);
@@ -179,7 +185,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/stopSend', async (req, res, next) => {
         logger.info('GET /stopSend');
         try {
-            audit.record('SEND_STOPPED', req.user.staffId);
+            audit.record('SEND_STOPPED', req.user.username);
             await batchloadService.stopSending();
             res.redirect('/');
         } catch (error) {
@@ -261,7 +267,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/removeInvalid', async (req, res, next) => {
         logger.info('GET /removeInvalid');
         try {
-            audit.record('REMOVE_INVALID', req.user.staffId);
+            audit.record('REMOVE_INVALID', req.user.username);
             await dbClient.removeInvalid();
             res.redirect('/');
         } catch (error) {
@@ -273,8 +279,32 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/removeDuplicate', async (req, res, next) => {
         logger.info('GET /removeDuplicate');
         try {
-            audit.record('REMOVE_DUPLICATE', req.user.staffId);
+            audit.record('REMOVE_DUPLICATE', req.user.username);
             await dbClient.removeDuplicate();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/remove404master', async (req, res, next) => {
+        logger.info('GET /remove404master');
+        try {
+            audit.record('REMOVE_404', req.user.username);
+            await dbClient.remove404master();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/remove404', async (req, res, next) => {
+        logger.info('GET /remove404');
+        try {
+            audit.record('REMOVE_404', req.user.username);
+            await dbClient.remove404stage();
             res.redirect('/');
         } catch (error) {
             logger.error(error);
@@ -285,7 +315,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     router.get('/clearUpload', async (req, res, next) => {
         logger.info('GET /clearUpload');
         try {
-            audit.record('CLEAR_UPLOAD', req.user.staffId);
+            audit.record('CLEAR_UPLOAD', req.user.username);
             await dbClient.clearUpload();
             res.redirect('/');
         } catch (error) {

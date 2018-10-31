@@ -16,6 +16,7 @@ const keys = [
     'SEND_DONE',
     'REMOVE_INVALID',
     'REMOVE_DUPLICATE',
+    'REMOVE_404',
     'STAGE'
 ];
 

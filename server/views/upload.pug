@@ -66,6 +66,9 @@ block content
                     p Incomplete records:
                         =" "
                         span#stagedIncompleteCount #{stagedIncomplete}
+                    p Rows with errors:
+                        =" "
+                        span#stagedRejectedCount #{stagedRejected}
                     if stagedIncomplete > 0
                         if(isSending)
                             p Wait for filling to complete
@@ -87,9 +90,11 @@ block content
                     else
                         if staged > 0
                             a.button(href="merge" role="button") Merge staging to master
+                            =" "
+                            a.button.button-secondary(href="remove404" role="button") Discard 404s
 
             div.column-full
-                div.column-half
+                div.column-full
                     h1.heading-large Send to Nomis
                     p Pending rows:
                         =" "
@@ -107,6 +112,8 @@ block content
                                 a.button(href="send" role="button") Start sending to Nomis
                         =" "
                         a.button.button-secondary(href="viewErrors" role="button") View rows with errors
+                        =" "
+                        a.button.button-secondary(href="remove404master" role="button") Discard 404s
 
             div.column-full
                     div.column-half
@@ -125,6 +132,8 @@ block content
                             p Successfully sent:
                                 =" "
                                 span#sentCount #{sent}
+                        p 'Find nomis ID' rate: #{fillingRate}ms
+                        p 'Send relationship' rate: #{sendingRate}ms
 
 
 block append scripts

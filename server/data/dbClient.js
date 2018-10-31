@@ -70,12 +70,24 @@ module.exports = {
             having count(offender_nomis) > 1)`);
     },
 
+    remove404stage: function() {
+        return db.query(`delete from om_relations_staging where rejection like '404%'`);
+    },
+
+    remove404master: function() {
+        return db.query(`delete from om_relations where rejection like '404%'`);
+    },
+
     getStagedIncomplete: function() {
         return db.query(`select * from om_relations_staging where offender_nomis is null order by id`);
     },
 
     getStagedIncompleteCount: function() {
         return db.query(`select count(*) as count from om_relations_staging where offender_nomis is null`);
+    },
+
+    getStagedRejectedCount: function() {
+        return db.query(`select count(*) as count from om_relations_staging where rejection is not null`);
     },
 
     getStaged: function() {

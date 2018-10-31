@@ -1,4 +1,4 @@
-const {
+    const {
     request,
     sandbox,
     expect,
@@ -28,6 +28,7 @@ const dbClientStub = {
     getUploadValidCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getUploadDuplicateCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getStagedIncompleteCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getStagedRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getStagedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getPendingCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
@@ -198,6 +199,7 @@ describe('upload routes', () => {
                     expect(data.uploadValid).to.eql(3);
                     expect(data.uploadDuplicate).to.eql(3);
                     expect(data.stagedIncomplete).to.eql(3);
+                    expect(data.stagedRejected).to.eql(3);
                     expect(data.staged).to.eql(3);
                     expect(data.pending).to.eql(3);
                     expect(data.rejected).to.eql(3);

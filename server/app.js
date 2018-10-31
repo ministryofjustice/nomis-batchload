@@ -190,7 +190,7 @@ module.exports = function createApp({
         meta: true,
         dynamicMeta: function(req, res) {
             let meta = {
-                userId: req.user ? req.user.staffId : null,
+                userId: req.user ? req.user.username : null,
                 requestId: req.id,
                 sessionTag: req.user ? req.user.sessionTag : null
             };
