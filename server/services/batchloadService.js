@@ -4,8 +4,8 @@ const {IntervalQueue} = require('../utils/intervalQueue');
 
 module.exports = function createBatchloadService(nomisClientBuilder, dbClient, audit) {
 
-    const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.getRateLimit, fillingFinished);
-    const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.postRateLimit, sendingFinished);
+    const fillingQueue = new IntervalQueue(fillNomisIdFromApi, config.nomis.findNomisIdIntervalMillis, fillingFinished);
+    const sendingQueue = new IntervalQueue(sendRelationToApi, config.nomis.sendRelationshipIntervalMillis, sendingFinished);
 
     let fillingState = false;
     let sendingState = false;
