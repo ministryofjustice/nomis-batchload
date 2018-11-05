@@ -25,7 +25,7 @@ module.exports = (tokenStore, signInService) => username => {
             const path = `${apiUrl}/bookings/offenderNo/${nomisId}/relationships`;
             const body = {
                 externalRef: staffId,
-                relationshipType: 'COM',
+                relationshipType: 'RO',
                 firstName,
                 lastName
             };
