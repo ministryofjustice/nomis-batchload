@@ -2,18 +2,19 @@
 function pollActivityStatus(previous) {
     $.get('activityStatus', function(activityData) {
         console.log('activityStatePoll - response')
+        console.log(activityData.isFilling)
+        console.log(activityData.isSending)
         if (activityData.isFilling || activityData.isSending) {
             console.log('activityStatePoll - updatePage')
             updatePage(activityData);
-            setTimeout(function() {pollActivityStatus(true)}, 500);
+            setTimeout(function() {pollActivityStatus(true)}, 1000);
         } else if (previous) {
             console.log('activityStatePoll - reload')
             location.reload();
         }
     }).fail(function(error) {
             console.log('activityStatePoll - fail')
-        alert('error');
-        alert(error);
+        console.log(error)
     });
 }
 
