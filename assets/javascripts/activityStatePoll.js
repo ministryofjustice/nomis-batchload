@@ -7,6 +7,9 @@ function pollActivityStatus(previous) {
         } else if (previous) {
             location.reload();
         }
+    }).fail(function(error) {
+        alert('error');
+        alert(error);
     });
 }
 
