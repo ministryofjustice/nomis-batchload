@@ -125,6 +125,10 @@ module.exports = {
         return db.query(`select * from om_relations where pending = true`);
     },
 
+    setPending: function() {
+        return db.query(`update om_relations set pending = true`);
+    },
+
     getPendingCount: function() {
         return db.query(`select count(*) as count from om_relations where pending = true`);
     },

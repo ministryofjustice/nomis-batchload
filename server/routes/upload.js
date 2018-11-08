@@ -141,6 +141,18 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
     });
 
+    router.get('/setPending', async (req, res, next) => {
+        logger.info('GET /setPending');
+        try {
+            audit.record('SET_PENDING', req.user.username);
+            await dbClient.setPending();
+            res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
     router.get('/fill', async (req, res, next) => {
         logger.info('GET /fill');
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {

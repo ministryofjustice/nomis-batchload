@@ -18,7 +18,8 @@ const keys = [
     'REMOVE_INVALID',
     'REMOVE_DUPLICATE',
     'REMOVE_404',
-    'STAGE'
+    'STAGE',
+    'SET_PENDING'
 ];
 
 exports.record = function record(key, user, data) {
