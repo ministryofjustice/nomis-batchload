@@ -7,6 +7,9 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
 
     const fillingRate = config.nomis.findNomisIdIntervalMillis;
     const sendingRate = config.nomis.sendRelationshipIntervalMillis;
+    const columns = config.csv.columns;
+    const delimiter = config.csv.delimiter;
+    const columnSpec = Object.values(columns).join(delimiter);
 
     router.use(function(req, res, next) {
         if (typeof req.csrfToken === 'function') {
@@ -25,7 +28,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             const countData = req.flash('counts');
             const counts = countData ? countData[0] : {};
 
-            res.render('upload', {...resultData, ...activityData, counts, fillingRate, sendingRate});
+            res.render('upload', {...resultData, ...activityData, counts, fillingRate, sendingRate, columnSpec});
         } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);
@@ -212,6 +215,23 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             audit.record('SEND_STOPPED', req.user.username);
             await batchloadService.stopSending();
             res.redirect('/');
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/viewUpload', async (req, res, next) => {
+        logger.info('GET /viewUpload');
+
+        try {
+            const upload = await dbClient.getUploadValid();
+
+            res.render('badUploadReport', {
+                heading: 'Uploaded',
+                rows: upload.rows,
+                moment: require('moment')
+            });
         } catch (error) {
             logger.error(error);
             res.redirect('/?error=' + error);

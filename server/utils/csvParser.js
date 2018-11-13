@@ -55,8 +55,8 @@ module.exports = function(logger, dbClient) {
         const nomis = row[columns.offenderNomis];
         const pnc = row[columns.offenderPnc];
         const staffId = row[columns.staffId];
-        const staffFirst = nonemptyValueOrDefault(row[columns.staffFirst], staffId);
-        const staffLast = nonemptyValueOrDefault(row[columns.staffLast], staffId);
+        const staffFirst = row[columns.staffFirst];
+        const staffLast = row[columns.staffLast];
 
         const record = [nomis, pnc, staffId, staffFirst, staffLast];
 
@@ -64,10 +64,6 @@ module.exports = function(logger, dbClient) {
             const trimmed = s ? s.trim() : '';
             return trimmed.length > 0 ? trimmed : null;
         });
-    }
-
-    function nonemptyValueOrDefault(value, defaultValue) {
-         return value && value.length > 0 ? value : defaultValue;
     }
 
     return {parseCsv};

@@ -310,7 +310,6 @@ describe('upload routes', () => {
                 .expect(200)
                 .expect(res => {
                     expect(res.text).to.include('<td>1</td>' +
-                        '<td>21/12/2017 - 00:00</td>' +
                         '<td>2</td>' +
                         '<td>3</td>' +
                         '<td>4</td>' +
@@ -357,7 +356,6 @@ describe('upload routes', () => {
                 .expect(200)
                 .expect(res => {
                     expect(res.text).to.include('<td>1</td>' +
-                        '<td>21/12/2017 - 00:00</td>' +
                         '<td>2</td>' +
                         '<td>3</td>' +
                         '<td>4</td>' +

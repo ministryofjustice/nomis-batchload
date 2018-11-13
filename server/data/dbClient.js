@@ -22,7 +22,7 @@ module.exports = {
         return db.query(`select count(*) as count from om_relations_upload where not
             (offender_nomis is null and offender_pnc is null)
             and not
-            staff_id is null
+            (staff_id is null or staff_first is null or staff_last is null)
             `);
     },
 
@@ -30,7 +30,7 @@ module.exports = {
         return db.query(`select count(*) as count from om_relations_upload where 
             (offender_nomis is null and offender_pnc is null)
             or
-            staff_id is null
+            (staff_id is null or staff_first is null or staff_last is null)
             `);
     },
 
@@ -38,9 +38,17 @@ module.exports = {
         return db.query(`select * from om_relations_upload where 
             (offender_nomis is null and offender_pnc is null)
             or
-            staff_id is null
+            (staff_id is null or staff_first is null or staff_last is null)
             order by staff_id
             `);
+    },
+
+    getUploadValid: function() {
+        return db.query(`select *from om_relations_upload where not
+            (offender_nomis is null and offender_pnc is null)
+            and not
+            (staff_id is null or staff_first is null or staff_last is null)
+        `);
     },
 
     getUploadDuplicateCount: function() {
@@ -64,7 +72,8 @@ module.exports = {
         return db.query(`delete from om_relations_upload where
             (offender_nomis is null and offender_pnc is null)
             or
-            staff_id is null`);
+            (staff_id is null or staff_first is null or staff_last is null)
+            `);
     },
 
     removeDuplicate: function() {

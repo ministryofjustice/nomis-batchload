@@ -41,14 +41,13 @@ module.exports = {
         apiGatewayEnabled: get('API_GATEWAY_ENABLED', 'no'),
         apiGatewayToken: get('NOMIS_GW_TOKEN', 'dummy'),
         apiGatewayPrivateKey: new Buffer(get('NOMIS_GW_KEY', 'dummy'), 'base64').toString('ascii'),
-        licenceRolePrefix: get('LICENCE_ROLE_PREFIX', 'LICENCE'),
         apiClientId: get('API_CLIENT_ID', 'licences'),
         apiClientSecret: get('API_CLIENT_SECRET', 'clientsecret'),
         batchsSystemApiClientId: get('ADMIN_API_CLIENT_ID', 'batchadmin'),
         batchSystemApiClientSecret: get('ADMIN_API_CLIENT_SECRET', 'clientsecret'),
         batchUserRole: get('BATCH_USER_ROLE', 'NOMIS_BATCHLOAD'),
         timeout: {
-            response: get('RESPONSE_TIMEOUT', 30000),
+            response: get('RESPONSE_TIMEOUT', 35000),
             deadline: get('DEADLINE_TIMEOUT', 45000)
         },
         findNomisIdIntervalMillis: get('FINDNOMISID_INTERVAL_MILLIS', 500),
