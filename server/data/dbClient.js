@@ -91,6 +91,10 @@ module.exports = {
         return db.query(`delete from om_relations where rejection like '404%'`);
     },
 
+    resetErrors: function() {
+        return db.query(`update om_relations set rejection = null`);
+    },
+
     getStagedIncomplete: function() {
         return db.query(`select * from om_relations_staging where offender_nomis is null order by id`);
     },

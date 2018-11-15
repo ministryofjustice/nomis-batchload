@@ -34,7 +34,8 @@ const dbClientStub = {
     getRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getSentCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     mergeStageToMaster: sandbox.stub().returnsPromise().resolves(),
-    updateWithNomisResult: sandbox.stub().returnsPromise().resolves()
+    updateWithNomisResult: sandbox.stub().returnsPromise().resolves(),
+    resetErrors: sandbox.stub().returnsPromise().resolves()
 };
 
 const nomisClient = {

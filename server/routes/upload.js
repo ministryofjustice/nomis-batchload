@@ -200,6 +200,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         if (!batchloadService.isFilling() && !batchloadService.isSending()) {
             try {
                 audit.record('SEND_STARTED', req.user.username);
+                await dbClient.resetErrors();
                 await batchloadService.send(req.user.username);
             } catch (error) {
                 logger.error(error);
