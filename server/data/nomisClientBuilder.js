@@ -17,7 +17,7 @@ module.exports = (tokenStore, signInService) => username => {
     return {
         getNomisIdForPnc: function(pnc) {
             const path = `${apiUrl}/prisoners`;
-            const query = {pncNumber: pnc};
+            const query = {pncNumber: pnc, prioiritisedMatch: true};
             return nomisGet({path, query});
         },
 
