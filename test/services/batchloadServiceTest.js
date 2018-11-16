@@ -56,10 +56,10 @@ describe('batchloadService', () => {
 
     describe('fill', () => {
 
-        it('should copy IDs from master', async () => {
-            await service.fill();
-            expect(dbClient.copyNomisIdsFromMaster).to.be.calledOnce();
-        });
+        // it('should copy IDs from master', async () => {
+        //     await service.fill();
+        //     expect(dbClient.copyNomisIdsFromMaster).to.be.calledOnce();
+        // });
 
         it('should try to fill staged PNCs', async () => {
             await service.fill();

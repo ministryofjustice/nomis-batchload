@@ -6,128 +6,169 @@ const logger = require('../../log.js');
 
 module.exports = {
 
-    clearStaged: function() {
-        return db.query(`delete from om_relations_staging`);
+    clearUpload: function() {
+        return db.query(`delete from om_relations_load`);
     },
 
     clearMaster: function() {
         return db.query(`delete from om_relations`);
     },
 
-    clearUpload: function() {
-        return db.query(`delete from om_relations_upload`);
+    getCompleteCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load
+                         where offender_nomis is not null
+                           and staff_id is not null
+                           and staff_first is not null
+                           and staff_last is not null`);
     },
 
-    getUploadValidCount: function() {
-        return db.query(`select count(*) as count from om_relations_upload where not
-            (offender_nomis is null and offender_pnc is null)
-            and not
-            (staff_id is null or staff_first is null or staff_last is null)
-            `);
-    },
-
-    getUploadInvalidCount: function() {
-        return db.query(`select count(*) as count from om_relations_upload where 
-            (offender_nomis is null and offender_pnc is null)
-            or
-            (staff_id is null or staff_first is null or staff_last is null)
-            `);
-    },
-
-    getUploadInvalid: function() {
-        return db.query(`select * from om_relations_upload where 
-            (offender_nomis is null and offender_pnc is null)
-            or
-            (staff_id is null or staff_first is null or staff_last is null)
-            order by staff_id
-            `);
-    },
-
-    getUploadValid: function() {
-        return db.query(`select *from om_relations_upload where not
-            (offender_nomis is null and offender_pnc is null)
-            and not
-            (staff_id is null or staff_first is null or staff_last is null)
+    getValidCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load
+                         where not
+                                   (offender_nomis is null and offender_pnc is null)
+                           and not
+                                   (staff_id is null or staff_first is null or staff_last is null)
         `);
     },
 
-    getUploadDuplicateCount: function() {
-        return db.query(`select count(*) from (
-                select offender_nomis
-                from om_relations_upload
-                group by offender_nomis
-                having count(offender_nomis) > 1
-                ) as duplicates
-            `);
+    getValid: function() {
+        return db.query(`select *
+                         from om_relations_load
+                         where not
+                                   (offender_nomis is null and offender_pnc is null)
+                           and not
+                                   (staff_id is null or staff_first is null or staff_last is null)
+        `);
     },
 
-    getUploadDuplicates: function() {
-        return db.query(`select * from om_relations_upload where offender_nomis in (
-            select offender_nomis from om_relations_upload group by offender_nomis
-            having count(offender_nomis) > 1) order by offender_nomis ASC
-            `);
+    getInvalidCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load
+                         where (offender_nomis is null and offender_pnc is null)
+                            or (staff_id is null or staff_first is null or staff_last is null)
+        `);
+    },
+
+    getInvalid: function() {
+        return db.query(`select *
+                         from om_relations_load
+                         where (offender_nomis is null and offender_pnc is null)
+                            or (staff_id is null or staff_first is null or staff_last is null)
+                         order by staff_id
+        `);
     },
 
     removeInvalid: function() {
-        return db.query(`delete from om_relations_upload where
-            (offender_nomis is null and offender_pnc is null)
-            or
-            (staff_id is null or staff_first is null or staff_last is null)
-            `);
+        return db.query(`delete from om_relations_load
+                         where (offender_nomis is null and offender_pnc is null)
+                            or (staff_id is null or staff_first is null or staff_last is null)
+        `);
+    },
+
+    getDuplicateCount: function() {
+        return db.query(`select count(*)
+                         from (select offender_nomis
+                               from om_relations_load
+                               group by offender_nomis
+                               having count(offender_nomis) > 1) as duplicates
+        `);
+    },
+
+    getDuplicate: function() {
+        return db.query(`select *
+                         from om_relations_load
+                         where offender_nomis in
+                               (select offender_nomis from om_relations_load group by offender_nomis having count(offender_nomis) > 1)
+                         order by offender_nomis ASC
+        `);
     },
 
     removeDuplicate: function() {
-        return db.query(`delete from om_relations_upload where
-            offender_nomis in (
-            select offender_nomis from om_relations_upload group by offender_nomis
-            having count(offender_nomis) > 1)`);
+        return db.query(`delete from om_relations_load
+                         where offender_nomis in
+                               (select offender_nomis from om_relations_load group by offender_nomis having count(offender_nomis) > 1)`);
     },
 
-    remove404stage: function() {
-        return db.query(`delete from om_relations_staging where rejection like '404%'`);
+    getIncompleteCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load
+                         where offender_nomis is null
+                           and offender_pnc is not null
+                           and staff_id is not null
+                           and staff_first is not null
+                           and staff_last is not null`);
+    },
+
+    getIncomplete: function() {
+        return db.query(`select *
+                         from om_relations_load
+                         where offender_nomis is null
+                           and offender_pnc is not null
+                           and staff_id is not null
+                           and staff_first is not null
+                           and staff_last is not null
+                         order by id`);
+    },
+
+    getFillRejectedCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load
+                         where rejection is not null`);
+    },
+
+    remove404: function() {
+        return db.query(`delete from om_relations_load
+                         where rejection like '404%'`);
     },
 
     remove404master: function() {
-        return db.query(`delete from om_relations where rejection like '404%'`);
+        return db.query(`delete from om_relations
+                         where rejection like '404%'`);
     },
 
     resetErrors: function() {
-        return db.query(`update om_relations set rejection = null`);
+        return db.query(`update om_relations
+                         set rejection = null`);
     },
 
-    getStagedIncomplete: function() {
-        return db.query(`select * from om_relations_staging where offender_nomis is null order by id`);
+    getUploadedCount: function() {
+        return db.query(`select count(*) as count
+                         from om_relations_load`);
     },
 
-    getStagedIncompleteCount: function() {
-        return db.query(`select count(*) as count from om_relations_staging where offender_nomis is null`);
+    getUploaded: function() {
+        return db.query(`select *
+                         from om_relations_load`);
     },
 
-    getStagedRejectedCount: function() {
-        return db.query(`select count(*) as count from om_relations_staging where rejection is not null`);
-    },
-
-    getStaged: function() {
-        return db.query(`select * from om_relations_staging where offender_nomis is not null`);
-    },
-
-    getStagedCount: function() {
-        return db.query(`select count(*) as count from om_relations_staging where offender_nomis is not null`);
+    getMaster: function() {
+        return db.query(`select *
+                         from om_relations`);
     },
 
     getStagedPncs: function() {
-        return db.query(`select offender_pnc from om_relations_staging where offender_nomis is null and 
-        offender_pnc is not null`);
+        return db.query(`select offender_pnc
+                         from om_relations_load
+                         where offender_nomis is null
+                           and offender_pnc is not null
+                           and staff_id is not null
+                           and staff_first is not null
+                           and staff_last is not null
+                           `);
     },
 
     copyNomisIdsFromMaster: function() {
-        return db.query(`update om_relations_staging set offender_nomis = m.offender_nomis from om_relations m 
-        where m.offender_pnc = om_relations_staging.offender_pnc`);
+        return db.query(`update om_relations_load
+                         set offender_nomis = m.offender_nomis
+                         from om_relations m
+                         where m.offender_pnc = om_relations_load.offender_pnc`);
     },
 
     fillNomisId: function(pnc, nomisId, rejection) {
         const query = {
-            text: 'update om_relations_staging set offender_nomis = $1, rejection = $2 where offender_pnc = $3',
+            text: 'update om_relations_load set offender_nomis = $1, rejection = $2 where offender_pnc = $3',
             values: [nomisId, rejection, pnc]
         };
 
@@ -135,15 +176,20 @@ module.exports = {
     },
 
     getPending: function() {
-        return db.query(`select * from om_relations where pending = true`);
+        return db.query(`select *
+                         from om_relations
+                         where pending = true`);
     },
 
     setPending: function() {
-        return db.query(`update om_relations set pending = true`);
+        return db.query(`update om_relations
+                         set pending = true`);
     },
 
     getPendingCount: function() {
-        return db.query(`select count(*) as count from om_relations where pending = true`);
+        return db.query(`select count(*) as count
+                         from om_relations
+                         where pending = true`);
     },
 
     updateWithNomisResult: function(recordId, rejection) {
@@ -156,55 +202,58 @@ module.exports = {
     },
 
     getRejected: function() {
-        return db.query(`select * from om_relations where rejection is not null`);
+        return db.query(`select *
+                         from om_relations
+                         where rejection is not null`);
     },
 
     getRejectedCount: function() {
-        return db.query(`select count(*) as count from om_relations where rejection is not null`);
+        return db.query(`select count(*) as count
+                         from om_relations
+                         where rejection is not null`);
     },
 
     getSentCount: function() {
-        return db.query(`select count(*) as count from om_relations where pending = false`);
+        return db.query(`select count(*) as count
+                         from om_relations
+                         where pending = false`);
     },
 
     getAudit: function(maxCount) {
-        return db.query(`select * from audit order by timestamp desc limit ${maxCount}`);
-    },
-
-    mergeUploadToStage: function() {
-        const move = `insert into om_relations_staging 
-            (offender_nomis, offender_pnc, staff_id, staff_first, staff_last) 
-            select offender_nomis, offender_pnc, staff_id, staff_first, staff_last 
-            from om_relations_upload; `;
-
-        const remove = 'delete from om_relations_upload; ';
-
-        return db.query('begin transaction; ' + move + remove + 'commit;');
+        return db.query(`select *
+                         from audit
+                         order by timestamp desc limit ${maxCount}`);
     },
 
     mergeStageToMaster: function() {
 
-        const updateExistingEntries = `insert into om_relations 
-            (offender_nomis, offender_pnc, staff_id, staff_first, staff_last, pending)
-            select stage.offender_nomis, stage.offender_pnc, stage.staff_id, stage.staff_first, stage.staff_last, true
-            from om_relations_staging stage where stage.offender_nomis is not null and stage.staff_id is not null
-            on conflict(offender_nomis) do update set pending = true, staff_id = excluded.staff_id, 
+        const updateExistingEntries = `insert into om_relations (offender_nomis, offender_pnc, staff_id, staff_first, staff_last, pending)
+                                       select stage.offender_nomis,
+                                              stage.offender_pnc,
+                                              stage.staff_id,
+                                              stage.staff_first,
+                                              stage.staff_last,
+                                              true
+                                       from om_relations_load stage
+                                       where stage.offender_nomis is not null
+                                         and stage.staff_id is not null
+            on conflict(offender_nomis) do update set pending = true, staff_id = excluded.staff_id,
             staff_first = excluded.staff_first, staff_last = excluded.staff_last
             where (om_relations.staff_id <> excluded.staff_id
-                or om_relations.staff_first <> excluded.staff_first
-                or om_relations.staff_last <> excluded.staff_last
+            or om_relations.staff_first <> excluded.staff_first
+            or om_relations.staff_last <> excluded.staff_last
             ); `;
 
         const addNewEntries = 'insert into om_relations (offender_nomis, offender_pnc, staff_id, ' +
             'staff_first, staff_last, pending) ' +
             'select offender_nomis, offender_pnc, staff_id, ' +
             'staff_first, staff_last, true ' +
-            'from om_relations_staging stage ' +
+            'from om_relations_load stage ' +
             'where stage.offender_nomis is not null ' +
             'and stage.staff_id is not null ' +
             'and not exists(select 1 from om_relations where offender_nomis = stage.offender_nomis); ';
 
-        const removeMergedEntries = 'delete from om_relations_staging where ' +
+        const removeMergedEntries = 'delete from om_relations_load where ' +
             'offender_nomis is not null ' +
             'and staff_id is not null; ';
 
@@ -221,7 +270,7 @@ module.exports = {
 
             db.pool.connect().then(client => {
 
-                const stream = client.query(copyFrom(`copy om_relations_upload (offender_nomis, offender_pnc, 
+                const stream = client.query(copyFrom(`copy om_relations_load (offender_nomis, offender_pnc, 
                 staff_id, staff_first, staff_last) from stdin with NULL 'null'`));
 
                 const rs = new Readable;

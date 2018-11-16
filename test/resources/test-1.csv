@@ -1,0 +1,11 @@
+description,PNC No,NOMS No,Staff Cd (OfM),Staff First,Staff Last
+INCOMPLETE,pnc0,,staff0,missing,noms
+INCOMPLETE -> DUPLICATE,pnc0,,staff1,causes,duplicate
+INVALID,,,staff2,missing,both
+OK,,noms1,staff1,missing,pnc
+INVALID,pnc3,noms3,,missing,staff
+INVALID,pnc4,noms4,staff4,,missing
+INVALID,pnc5,noms5,staff5,missing,
+OK,pnc6,noms6,staff6,all,ok
+DUPLICATE,pnc7,noms6,staff7,duplicate,noms
+OK,pnc6,noms8,staff8,duplicate,pnc

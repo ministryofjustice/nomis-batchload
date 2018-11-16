@@ -24,12 +24,13 @@ const dbClientStub = {
     }),
     getPending: sandbox.stub().returnsPromise().resolves([]),
     fillNomisId: sandbox.stub().returnsPromise().resolves(),
-    getUploadInvalidCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
-    getUploadValidCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
-    getUploadDuplicateCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
-    getStagedIncompleteCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
-    getStagedRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
-    getStagedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getInvalidCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getValidCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getCompleteCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getUploadedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getDuplicateCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getIncompleteCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
+    getFillRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getPendingCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getRejectedCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
     getSentCount: sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]}),
@@ -83,7 +84,7 @@ describe('upload routes', () => {
 
         afterEach(() => {
             sandbox.reset();
-            dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]});
+            dbClientStub.getIncompleteCount = sandbox.stub().returnsPromise().resolves({rows: [{count: 3}]});
         });
 
         it('should get data and re-display page', () => {
@@ -91,8 +92,7 @@ describe('upload routes', () => {
                 .get('/')
                 .expect(200)
                 .expect(res => {
-                    expect(dbClientStub.getStagedIncompleteCount).to.be.calledOnce();
-                    expect(dbClientStub.getStagedCount).to.be.calledOnce();
+                    expect(dbClientStub.getIncompleteCount).to.be.calledOnce();
                     expect(dbClientStub.getPendingCount).to.be.calledOnce();
                     expect(dbClientStub.getRejectedCount).to.be.calledOnce();
                 });
@@ -100,7 +100,7 @@ describe('upload routes', () => {
 
         it('should redirect to route if error', () => {
 
-            dbClientStub.getStagedIncompleteCount = sandbox.stub().returnsPromise().rejects();
+            dbClientStub.getIncompleteCount = sandbox.stub().returnsPromise().rejects();
 
             return request(app)
                 .get('/')
@@ -153,7 +153,7 @@ describe('upload routes', () => {
         });
     });
 
-    describe('GET /clearStaged', () => {
+    describe('GET /clearUpload', () => {
 
         afterEach(() => {
             sandbox.reset();
@@ -161,19 +161,19 @@ describe('upload routes', () => {
 
         it('should empty the stage data', () => {
             return request(app)
-                .get('/clearStaged')
+                .get('/clearUpload')
                 .expect(302)
                 .expect(res => {
-                    expect(dbClientStub.clearStaged).to.be.calledOnce();
+                    expect(dbClientStub.clearUpload).to.be.calledOnce();
                 });
         });
 
         it('should redirect to route if error', () => {
 
-            dbClientStub.clearStaged = sandbox.stub().returnsPromise().rejects();
+            dbClientStub.clearUpload = sandbox.stub().returnsPromise().rejects();
 
             return request(app)
-                .get('/clearStaged')
+                .get('/clearUpload')
                 .expect(302)
                 .expect(res => {
                     expect(res.text).to.include('Redirecting to /?error=undefined');
@@ -185,7 +185,7 @@ describe('upload routes', () => {
 
         afterEach(() => {
             sandbox.reset();
-            dbClientStub.getStagedCount.resolves({rows: [{count: 3}]});
+            dbClientStub.getValidCount.resolves({rows: [{count: 3}]});
         });
 
         it('should return json object with data', () => {
@@ -196,12 +196,11 @@ describe('upload routes', () => {
 
                     const data = JSON.parse(res.text);
 
-                    expect(data.uploadInvalid).to.eql(3);
-                    expect(data.uploadValid).to.eql(3);
-                    expect(data.uploadDuplicate).to.eql(3);
-                    expect(data.stagedIncomplete).to.eql(3);
-                    expect(data.stagedRejected).to.eql(3);
-                    expect(data.staged).to.eql(3);
+                    expect(data.invalidCount).to.eql(3);
+                    expect(data.validCount).to.eql(3);
+                    expect(data.duplicateCount).to.eql(3);
+                    expect(data.incompleteCount).to.eql(3);
+                    expect(data.fillRejectedCount).to.eql(3);
                     expect(data.pending).to.eql(3);
                     expect(data.rejected).to.eql(3);
                     expect(data.sent).to.eql(3);
@@ -212,7 +211,7 @@ describe('upload routes', () => {
 
         it('should return 500 if fails', () => {
             const error = new Error('error');
-            dbClientStub.getStagedCount.rejects(error);
+            dbClientStub.getValidCount.rejects(error);
             return request(app)
                 .get('/activityStatus')
                 .expect(500)
@@ -295,7 +294,7 @@ describe('upload routes', () => {
 
         it('should redirect to route', () => {
 
-            dbClientStub.getStagedIncomplete = sandbox.stub().returnsPromise().resolves({
+            dbClientStub.getIncomplete = sandbox.stub().returnsPromise().resolves({
                 rows: [
                     {
                         id: 1, timestamp: '2017-12-21 0:0:0.0',
@@ -322,7 +321,7 @@ describe('upload routes', () => {
 
         it('should redirect to route if error', () => {
 
-            dbClientStub.getStagedIncomplete = sandbox.stub().returnsPromise().rejects();
+            dbClientStub.getIncomplete = sandbox.stub().returnsPromise().rejects();
 
             return request(app)
                 .get('/viewIncomplete')
@@ -402,22 +401,22 @@ describe('upload routes', () => {
                 .get('/fill')
                 .expect(302)
                 .expect(res => {
-                    expect(dbClientStub.copyNomisIdsFromMaster).to.be.calledOnce();
+                    // expect(dbClientStub.copyNomisIdsFromMaster).to.be.calledOnce();
                     expect(dbClientStub.getStagedPncs).to.be.calledOnce();
                     expect(dbClientStub.fillNomisId).to.be.calledOnce();
                     expect(dbClientStub.fillNomisId).to.be.calledWith('a', 'offenderId', null);
                 });
         });
 
-        it('should handle error copying from master', () => {
-            dbClientStub.copyNomisIdsFromMaster.rejects(new Error('nomisfrommaster'));
-            return request(app)
-                .get('/fill')
-                .expect(302)
-                .expect(res => {
-                    expect(res.text).to.include('Redirecting to /?error=Error:%20nomisfrommaster');
-                });
-        });
+        // it('should handle error copying from master', () => {
+        //     dbClientStub.copyNomisIdsFromMaster.rejects(new Error('nomisfrommaster'));
+        //     return request(app)
+        //         .get('/fill')
+        //         .expect(302)
+        //         .expect(res => {
+        //             expect(res.text).to.include('Redirecting to /?error=Error:%20nomisfrommaster');
+        //         });
+        // });
 
         it('should handle error getting staged pncs', () => {
             dbClientStub.getStagedPncs.rejects(new Error('stagedpncs'));

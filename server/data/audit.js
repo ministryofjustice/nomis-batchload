@@ -5,7 +5,6 @@ const keys = [
     'LOGIN',
     'UPLOAD_STARTED',
     'UPLOAD_DONE',
-    'CLEAR_STAGED',
     'CLEAR_UPLOAD',
     'CLEAR_MASTER',
     'FILL_STARTED',
@@ -18,7 +17,6 @@ const keys = [
     'REMOVE_INVALID',
     'REMOVE_DUPLICATE',
     'REMOVE_404',
-    'STAGE',
     'SET_PENDING'
 ];
 

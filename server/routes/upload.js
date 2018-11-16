@@ -36,12 +36,16 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
     });
 
     async function getActivityStateData() {
-        const uploadInvalid = await dbClient.getUploadInvalidCount();
-        const uploadValid = await dbClient.getUploadValidCount();
-        const uploadDuplicate = await dbClient.getUploadDuplicateCount();
-        const stagedIncomplete = await dbClient.getStagedIncompleteCount();
-        const stagedRejected = await dbClient.getStagedRejectedCount();
-        const staged = await dbClient.getStagedCount();
+        const invalidCount = await dbClient.getInvalidCount();
+        const validCount = await dbClient.getValidCount();
+        const completeCount = await dbClient.getCompleteCount();
+        const uploadedCount = await dbClient.getUploadedCount();
+        const duplicateCount = await dbClient.getDuplicateCount();
+        const incompleteCount = await dbClient.getIncompleteCount();
+        const fillRejectedCount = await dbClient.getFillRejectedCount();
+
+        const usableCount = completeCount.rows[0].count - 2*duplicateCount.rows[0].count;
+
         const pending = await dbClient.getPendingCount();
         const rejected = await dbClient.getRejectedCount();
         const sent = await dbClient.getSentCount();
@@ -50,15 +54,20 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         const isSending = batchloadService.isSending();
 
         return {
-            uploadInvalid: uploadInvalid.rows[0].count,
-            uploadValid: uploadValid.rows[0].count,
-            uploadDuplicate: uploadDuplicate.rows[0].count,
-            stagedIncomplete: stagedIncomplete.rows[0].count,
-            stagedRejected: stagedRejected.rows[0].count,
-            staged: staged.rows[0].count,
+            invalidCount: invalidCount.rows[0].count,
+            validCount: validCount.rows[0].count,
+            completeCount: completeCount.rows[0].count,
+            uploadedCount: uploadedCount.rows[0].count,
+            duplicateCount: duplicateCount.rows[0].count,
+            incompleteCount: incompleteCount.rows[0].count,
+            fillRejectedCount: fillRejectedCount.rows[0].count,
+
+            usableCount,
+
             pending: pending.rows[0].count,
             rejected: rejected.rows[0].count,
             sent: sent.rows[0].count,
+
             isFilling,
             isSending
         };
@@ -104,31 +113,6 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
             const detail = error.detail ? error.detail : '';
 
             res.redirect('/?error=' + error + ' - ' + detail);
-        }
-    });
-
-    router.get('/stage', async (req, res, next) => {
-        logger.info('GET /stage');
-        try {
-            audit.record('STAGE', req.user.username);
-            await dbClient.clearStaged();
-            await dbClient.mergeUploadToStage();
-            res.redirect('/');
-        } catch (error) {
-            logger.error(error);
-            res.redirect('/?error=' + error);
-        }
-    });
-
-    router.get('/clearStaged', async (req, res, next) => {
-        logger.info('GET /clearStaged');
-        try {
-            audit.record('CLEAR_STAGED', req.user.username);
-            await dbClient.clearStaged();
-            res.redirect('/');
-        } catch (error) {
-            logger.error(error);
-            res.redirect('/?error=' + error);
         }
     });
 
@@ -226,11 +210,28 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /viewUpload');
 
         try {
-            const upload = await dbClient.getUploadValid();
+            const upload = await dbClient.getUploaded();
 
-            res.render('badUploadReport', {
+            res.render('errorReport', {
                 heading: 'Uploaded',
                 rows: upload.rows,
+                moment: require('moment')
+            });
+        } catch (error) {
+            logger.error(error);
+            res.redirect('/?error=' + error);
+        }
+    });
+
+    router.get('/viewMaster', async (req, res, next) => {
+        logger.info('GET /viewMaster');
+
+        try {
+            const master = await dbClient.getMaster();
+
+            res.render('errorReport', {
+                heading: 'All',
+                rows: master.rows,
                 moment: require('moment')
             });
         } catch (error) {
@@ -243,7 +244,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /viewInvalid');
 
         try {
-            const invalid = await dbClient.getUploadInvalid();
+            const invalid = await dbClient.getInvalid();
 
             res.render('badUploadReport', {
                 heading: 'Invalid',
@@ -256,11 +257,11 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         }
     });
 
-    router.get('/viewDuplicates', async (req, res, next) => {
-        logger.info('GET /viewDuplicates');
+    router.get('/viewDuplicate', async (req, res, next) => {
+        logger.info('GET /viewDuplicate');
 
         try {
-            const duplicates = await dbClient.getUploadDuplicates();
+            const duplicates = await dbClient.getDuplicate();
 
             res.render('badUploadReport', {
                 heading: 'Duplicates',
@@ -277,7 +278,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /viewIncomplete');
 
         try {
-            const incomplete = await dbClient.getStagedIncomplete();
+            const incomplete = await dbClient.getIncomplete();
 
             res.render('errorReport', {
                 heading: 'Incomplete',
@@ -349,7 +350,7 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         logger.info('GET /remove404');
         try {
             audit.record('REMOVE_404', req.user.username);
-            await dbClient.remove404stage();
+            await dbClient.remove404();
             res.redirect('/');
         } catch (error) {
             logger.error(error);

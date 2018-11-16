@@ -39,7 +39,7 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     }
 
     async function startFilling(username) {
-        await dbClient.copyNomisIdsFromMaster();
+        // await dbClient.copyNomisIdsFromMaster();
         const pncs = await dbClient.getStagedPncs();
         fillingQueue.start(username, pncs.rows);
     }

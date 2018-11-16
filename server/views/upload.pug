@@ -11,11 +11,9 @@ block content
                     a(href="/") Start again
     else
         div.grid-row.paddingBottom
-            div.column-full.paddingBottom.borderBottomLight
-            div.column-full.paddingBottom
-                h3.heading-small Data import:
+            div.column-full.paddingBottom.smallPaddingTop.smallMarginTop
+                h1.heading-large Upload
                 div.column-half
-                    h1.heading-large Upload
                     form#acceptanceForm(method='POST', action='/', encType='multipart/form-data')
                         input(type="hidden" name="_csrf" value=csrfToken)
                         input(type="file" name="datafile")
@@ -31,124 +29,116 @@ block content
 
 
             div.column-full.paddingBottom.borderBottomLight
-                h3.heading-small Uploaded data:
-                div.column-half
-                    h1.heading-large Clean
-                    div.column-quarter
-                        p Invalid records:
+                h1.heading-large Uploaded
+                div.column-quarter
+                    p Invalid:
+                        =" "
+                        span#invalidCount #{invalidCount}
+                    if invalidCount > 0
+                        a.button.button-secondary(href="viewInvalid" role="button") View
+                        if(!isSending && !isFilling)
                             =" "
-                            span#uploadInvalidCount #{uploadInvalid}
-                        if uploadInvalid > 0
-                            a.button.button-secondary(href="viewInvalid" role="button") View invalid records
+                            a.button(href="removeInvalid" role="button") Discard
 
-                    div.column-quarter
-                        p Duplicate records:
+                div.column-quarter
+                    p Incomplete:
+                        =" "
+                        span#incompleteCount #{incompleteCount}
+                    if incompleteCount > 0
+                        a.button.button-secondary(href="viewIncomplete" role="button") View
+                        if(!isSending && !isFilling)
+
+                div.column-quarter
+                    p Duplicate:
+                        =" "
+                        span#duplicateCount #{duplicateCount}
+                    if duplicateCount > 0
+                        a.button.button-secondary(href="viewDuplicate" role="button") View
+                        if(!isSending && !isFilling)
                             =" "
-                            span#uploadDuplicateCount #{uploadDuplicate}
-                        if uploadDuplicate > 0
-                            a.button.button-secondary(href="viewDuplicates" role="button") View duplicate records
+                            a.button(href="removeDuplicate" role="button") Discard
 
-                div.column-half
-                    h1.heading-large Stage
-                    p Uploaded valid rows: #{uploadValid}
+                div.column-quarter
+                    p All:
+                        =" "
+                        span#uploadedCount #{uploadedCount}
+                    if uploadedCount > 0
+                        a.button.button-secondary(href="viewUpload" role="button") View
 
-                    div.column-quarter
-                        if uploadValid > 0
-                            a.button.button-secondary(href="viewUpload" role="button") View uploaded data
-                    div.column-quarter
-                        if(isSending || isFilling)
-                            p Wait for filling/sending to complete
-                        else
-                            if uploadInvalid > 0
-                                a.button(href="removeInvalid" role="button") DISCARD INVALID RECORDS
-                                =" "
-                            else if uploadDuplicate > 0
-                                a.button(href="removeDuplicate" role="button") DISCARD DUPLICATE RECORDS
-                                =" "
-                            else if uploadValid > 0
-                                a.button(href="stage" role="button") Stage uploaded records
 
             div.column-full.paddingBottom.borderBottomLight
-                h3.heading-small Staged data:
                 div.column-half
-                    h1.heading-large Fill Nomis Ids
-                    p Incomplete records:
+                    h1.heading-medium Fill Nomis IDs
+                    p Incomplete:
                         =" "
-                        span#stagedIncompleteCount #{stagedIncomplete}
-                    p Rows with errors:
+                        span#incompleteCount #{incompleteCount}
+                        |, Errors:
                         =" "
-                        span#stagedRejectedCount #{stagedRejected}
-                    if stagedIncomplete > 0
-                        if(isSending)
-                            p Wait for filling to complete
-                        else
+                        span#fillRejectedCount #{fillRejectedCount}
+                    if incompleteCount > 0
+                        if(!isSending)
                             if(isFilling)
                                 a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
                             else
                                 a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
-                            =" "
-                            a.button.button-secondary(href="viewIncomplete" role="button") View incomplete records
+                        =" "
+                        a.button.button-secondary(href="viewIncomplete" role="button") View
 
                 div.column-half
-                    h1.heading-large Merge
-                    p Ready to merge:
-                        =" "
-                        span#stagedCount  #{staged}
-                    if(isSending || isFilling)
-                        p Wait for filling/sending to complete
-                    else
-                        if staged > 0
-                            a.button(href="merge" role="button") Merge staging to master
+                    h1.heading-medium Merge
+                    if (invalidCount > 0 || duplicateCount > 0)
+                        p Usable:
                             =" "
-                            a.button.button-secondary(href="remove404" role="button") Discard 404s
+                            span#usableCount  #{usableCount}
+                        p Discard invalid & duplicate records
+                    else
+                        p Ready to merge:
+                            =" "
+                            span#completeCount  #{completeCount}
+                        if(!isSending && !isFilling) && completeCount > 0
+                            =" "
+                            a.button(href="merge" role="button") Merge upload to master
 
             div.column-full.paddingBottom.borderBottomLight
-                h3.heading-small Master data:
-                div.column-full
-                    h1.heading-large Send to Nomis
-                    p Pending rows:
-                        =" "
-                        span#pendingCount #{pending}
-                    p Rows with errors:
-                        =" "
-                        span#rejectedCount #{rejected}
-                    if (pending > 0 || rejected > 0)
-                        if(isFilling)
-                            p Wait for filling to complete
+                h1.heading-large Send to Nomis
+                p Pending:
+                    =" "
+                    span#pendingCount #{pending}
+                    | , Errors:
+                    =" "
+                    span#rejectedCount #{rejected}
+                    | , Done:
+                    =" "
+                    span#sentCount #{sent}
+                if (pending > 0 || rejected > 0)
+                    if(isFilling)
+                        p Wait for filling to complete
+                    else
+                        if(isSending)
+                            a.button(href="stopSend" role="button") Stop sending to Nomis
                         else
-                            if(isSending)
-                                a.button(href="stopSend" role="button") Stop sending to Nomis
-                            else
-                                a.button(href="send" role="button") Start sending to Nomis
-                        =" "
-                        a.button.button-secondary(href="viewErrors" role="button") View rows with errors
-                        =" "
-                        a.button.button-secondary(href="remove404master" role="button") Discard 404s
+                            a.button(href="send" role="button") Start sending to Nomis
+                            if rejected > 0
+                                =" "
+                                a.button.button-secondary(href="viewErrors" role="button") View rows with errors
+                            =" "
+                            a.button.button-secondary(href="viewMaster" role="button") View all
 
             div.column-full
-                h3.heading-small Use caution:
-                div.column-full
-                    h1.heading-large Admin
-                    if(isSending || isFilling)
-                        p Wait for filling/sending to complete
-                    else
-                        if staged > 0 || stagedIncomplete > 0
-                            a.button.button-secondary(href="clearStaged" role="button") DELETE staged data
-                        if uploadValid > 0 || uploadInvalid > 0 || uploadDuplicate > 0
-                            a.button.button-secondary(href="clearUpload" role="button") DELETE uploaded data
+                h1.heading-large Admin
+                if(isSending || isFilling)
+                    p Wait for filling/sending to complete
+                else
+                    a.button.button-secondary(href="clearUpload" role="button") DELETE uploaded data
                     ="  "
                     a.button.button-secondary(href="clearMaster" role="button") DELETE master data
                     ="  "
                     a.button.button-secondary(href="setPending" role="button") Set all to PENDING
                     ="  "
                     a.button.button-secondary(href="/audit" role="button") View activity record
-                    p
-                    if(sent)
-                        p Successfully sent:
-                            =" "
-                            span#sentCount #{sent}
-                    p 'Find nomis ID' rate: #{fillingRate}ms
-                    p 'Send relationship' rate: #{sendingRate}ms
+                p
+                p Find nomis ID: #{fillingRate}ms
+                    | , Send relationship: #{sendingRate}ms
 
 
 block append scripts
