@@ -130,7 +130,7 @@ module.exports = {
 
     resetErrors: function() {
         return db.query(`update om_relations
-                         set rejection = null`);
+                         set rejection = null where rejection not like '404%'`);
     },
 
     getUploadedCount: function() {
@@ -178,7 +178,13 @@ module.exports = {
     getPending: function() {
         return db.query(`select *
                          from om_relations
-                         where pending = true`);
+                         where pending = true and (rejection is null or rejection not like '404%')`);
+    },
+
+    get404: function() {
+        return db.query(`select *
+                         from om_relations
+                         where pending = true and rejection like '404%'`);
     },
 
     setPending: function() {

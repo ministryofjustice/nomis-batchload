@@ -78,9 +78,9 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
         await dbClient.fillNomisId(result.pnc, nomisId, rejection);
     }
 
-    async function send(username) {
+    async function send(username, with404 = false) {
         sendingState = true;
-        await startSending(username);
+        await startSending(username, with404);
     }
 
     function sendingFinished() {
@@ -88,8 +88,8 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
         audit.record('SEND_DONE', 'SYSTEM');
     }
 
-    async function startSending(username) {
-        const pending = await dbClient.getPending();
+    async function startSending(username, with404) {
+        const pending = with404 ? await dbClient.get404() : await dbClient.getPending();
         sendingQueue.start(username, pending.rows);
     }
 

@@ -194,6 +194,21 @@ module.exports = function({logger, csvParser, dbClient, batchloadService, audit,
         res.redirect('/');
     });
 
+    router.get('/send404', async (req, res, next) => {
+        logger.info('GET /send');
+        if (!batchloadService.isFilling() && !batchloadService.isSending()) {
+            try {
+                audit.record('SEND_STARTED', req.user.username);
+                await dbClient.resetErrors();
+                await batchloadService.send(req.user.username, true);
+            } catch (error) {
+                logger.error(error);
+                res.redirect('/?error=' + error);
+            }
+        }
+        res.redirect('/');
+    });
+
     router.get('/stopSend', async (req, res, next) => {
         logger.info('GET /stopSend');
         try {
