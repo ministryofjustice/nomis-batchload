@@ -12,8 +12,8 @@ describe('batchloadService', () => {
             getStagedIncomplete: sandbox.stub().returnsPromise().resolves({rows:
                 [{id: 1, offender_pnc: '123'}]}),
             getStagedPncs: sandbox.stub().returnsPromise().resolves({rows: [
-                {offender_pnc: '123'},
-                {offender_pnc: '456'}
+                {id: 1, offender_pnc: '123'},
+                {id: 2, offender_pnc: '456'}
             ]}),
             fillNomisId: sandbox.stub().returnsPromise().resolves(),
             findNomisId: sandbox.stub().returnsPromise().resolves({rows: [{offender_nomis: 'abc'}]}),
@@ -75,14 +75,14 @@ describe('batchloadService', () => {
         it('should send found id to db', async () => {
             await service.fill();
             expect(dbClient.fillNomisId).to.be.calledOnce();
-            expect(dbClient.fillNomisId).to.be.calledWith('123', 'id-from-nomis');
+            expect(dbClient.fillNomisId).to.be.calledWith(1, 'id-from-nomis');
         });
 
         it('should send found id and error message to db when API error', async () => {
             nomisClient.getNomisIdForPnc.rejects(new Error('error-from-nomis'));
             await service.fill();
             expect(dbClient.fillNomisId).to.be.calledOnce();
-            expect(dbClient.fillNomisId).to.be.calledWith('123', null, '0: "error-from-nomis"');
+            expect(dbClient.fillNomisId).to.be.calledWith(1, null, '0: "error-from-nomis"');
         });
     });
 

@@ -9,3 +9,4 @@ OK,pnc6,nomis6,staff6,all,ok
 DUPLICATE,pnc7,nomis6,staff7,duplicate,noms
 OK,pnc6,nomis8,staff8,duplicate,pnc
 INCOMPLETE -> DUPLICATE,pnc8,,staff9,causes,duplicate
+INCOMPLETE-PADDED PNC,2014/0564531H,,staff10,padded,pnc

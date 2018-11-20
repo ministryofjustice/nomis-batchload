@@ -149,7 +149,7 @@ module.exports = {
     },
 
     getStagedPncs: function() {
-        return db.query(`select offender_pnc
+        return db.query(`select id, offender_pnc
                          from om_relations_load
                          where offender_nomis is null
                            and offender_pnc is not null
@@ -166,10 +166,10 @@ module.exports = {
                          where m.offender_pnc = om_relations_load.offender_pnc`);
     },
 
-    fillNomisId: function(pnc, nomisId, rejection) {
+    fillNomisId: function(rowId, nomisId, rejection) {
         const query = {
-            text: 'update om_relations_load set offender_nomis = $1, rejection = $2 where offender_pnc = $3',
-            values: [nomisId, rejection, pnc]
+            text: 'update om_relations_load set offender_nomis = $1, rejection = $2 where id = $3',
+            values: [nomisId, rejection, rowId]
         };
 
         return db.query(query);

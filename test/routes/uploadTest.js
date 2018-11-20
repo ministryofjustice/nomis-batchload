@@ -18,8 +18,8 @@ const dbClientStub = {
     copyNomisIdsFromMaster: sandbox.stub().returnsPromise().resolves(),
     getStagedPncs: sandbox.stub().returnsPromise().resolves({
         rows: [
-            {offender_pnc: 'a'},
-            {offender_pnc: 'b'}
+            {id: 1, offender_pnc: 'a'},
+            {id: 2, offender_pnc: 'b'}
         ]
     }),
     getPending: sandbox.stub().returnsPromise().resolves([]),
@@ -384,8 +384,8 @@ describe('upload routes', () => {
             dbClientStub.copyNomisIdsFromMaster.resolves();
             dbClientStub.getStagedPncs.resolves({
                 rows: [
-                    {offender_pnc: 'a'},
-                    {offender_pnc: 'b'}
+                    {id: 1, offender_pnc: 'a'},
+                    {id: 2, offender_pnc: 'b'}
                 ]
             });
             nomisClient.getNomisIdForPnc.resolves([{offenderNo: 'offenderId'}]);
@@ -404,7 +404,7 @@ describe('upload routes', () => {
                     // expect(dbClientStub.copyNomisIdsFromMaster).to.be.calledOnce();
                     expect(dbClientStub.getStagedPncs).to.be.calledOnce();
                     expect(dbClientStub.fillNomisId).to.be.calledOnce();
-                    expect(dbClientStub.fillNomisId).to.be.calledWith('a', 'offenderId', null);
+                    expect(dbClientStub.fillNomisId).to.be.calledWith(1, 'offenderId', null);
                 });
         });
 
