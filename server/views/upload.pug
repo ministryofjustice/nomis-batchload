@@ -69,20 +69,15 @@ block content
             div.column-full.paddingBottom.borderBottomLight
                 div.column-half
                     h1.heading-medium Fill Nomis IDs
-                    p Incomplete:
-                        =" "
-                        span#incompleteCount #{incompleteCount}
-                        |, Errors:
-                        =" "
-                        span#fillRejectedCount #{fillRejectedCount}
+                    p Errors:
+                      =" "
+                      span#fillRejectedCount #{fillRejectedCount}
                     if incompleteCount > 0
                         if(!isSending)
                             if(isFilling)
                                 a#fillBtn.button(href="stopFill" role="button") Stop filling Nomis numbers
                             else
                                 a#fillBtn.button(href="fill" role="button") Start filling Nomis numbers
-                        =" "
-                        a.button.button-secondary(href="viewIncomplete" role="button") View
 
                 div.column-half
                     h1.heading-medium Merge
