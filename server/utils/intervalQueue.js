@@ -13,12 +13,14 @@ function IntervalQueue(method, interval, finishedCallback) {
         const [head, ...tail] = list;
 
         try {
+            logger.info('Calling queue method');
             this.method(username, head);
         } catch (err) {
             logger.error(err);
         }
 
         if(tail.length === 0) {
+            logger.info('Finished queue');
             this.finishedCallback();
             return;
         }

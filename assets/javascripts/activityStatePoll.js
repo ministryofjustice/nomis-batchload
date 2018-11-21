@@ -1,9 +1,6 @@
 /* eslint-disable */
 function pollActivityStatus(previous) {
     $.get('activityStatus', function(activityData) {
-        console.log(activityData.isFilling)
-        console.log(activityData.isSending)
-        console.log(previous)
         if (activityData.isFilling || activityData.isSending) {
             updatePage(activityData);
             setTimeout(function() {

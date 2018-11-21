@@ -50,7 +50,7 @@ module.exports = {
             response: get('RESPONSE_TIMEOUT', 35000),
             deadline: get('DEADLINE_TIMEOUT', 45000)
         },
-        findNomisIdIntervalMillis: get('FINDNOMISID_INTERVAL_MILLIS', 500),
+        findNomisIdIntervalMillis: get('FINDNOMISID_INTERVAL_MILLIS', 200),
         sendRelationshipIntervalMillis: get('SENDRELATION_INTERVAL_MILLIS', 200)
     },
 
