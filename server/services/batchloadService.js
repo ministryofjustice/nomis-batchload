@@ -50,16 +50,22 @@ module.exports = function createBatchloadService(nomisClientBuilder, dbClient, a
     }
 
     async function findNomisId(username, pnc, rowId, retry = false) {
-        logger.debug('findNomisId for PNC: ' + pnc);
+        logger.info(`find nomis ID for PNC: ${pnc.offender_pnc}`);
         try {
             const nomisClient = nomisClientBuilder(username);
-
             const nomisResult = await nomisClient.getNomisIdForPnc(retry ? pnc : unpad(pnc));
 
+            logger.info(`getNomisId result: ${nomisResult}`);
+
             if (nomisResult.length < 1) {
-                return {pnc, rejection: 'Empty Response'};
+                return retry ? {rowId, rejection: 'Empty Response'} : findNomisId(username, pnc, rowId, true);
             }
-            return {rowId, nomisId: nomisResult[0].offenderNo};
+
+            if (nomisResult[0] && nomisResult[0].offenderNo) {
+                return {rowId, nomisId: nomisResult[0].offenderNo};
+            }
+
+            return {rowId, rejection: 'Unexpected Response Format'};
 
         } catch (error) {
             logger.warn('Error looking up nomis ID: ' + error);
