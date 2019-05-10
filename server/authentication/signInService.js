@@ -170,7 +170,7 @@ function nomisGet(path, token) {
 }
 
 function getOauthUrl() {
-    return config.nomis.apiUrl.replace('/api', '');
+    return config.nomis.apiUrl.replace('elite2api/api', 'auth');
 }
 
 function unauthorised(error) {
