@@ -32,7 +32,7 @@
     },
     "dependencies": {
         "adm-zip": "^0.4.11",
-        "applicationinsights": "^0.19.0",
+        "applicationinsights": "^1.4.0",
         "babel-core": "^6.24.1",
         "babel-loader": "^7.0.0",
         "babel-plugin-transform-es3-member-expression-literals": "^6.22.0",
@@ -97,7 +97,7 @@
         "webpack": "^2.4.1",
         "webpack-stream": "^3.2.0",
         "winston": "^2.3.1",
-        "winston-azure-application-insights": "^1.1.1"
+        "winston-azure-application-insights": "^2.0.0"
     },
     "devDependencies": {
         "chai": "^3.5.0",
