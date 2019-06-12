@@ -1,6 +1,9 @@
 'use strict';
 
 let winston = require('winston');
+const {AzureApplicationInsightsLogger} = require('winston-azure-application-insights');
+const appInsights = require('./azure-appinsights');
+const {flattenMeta} = require('./server/misc');
 
 const logger = new (winston.Logger);
 
@@ -52,6 +55,23 @@ if (process.env.NODE_ENV === 'test') {
         timestamp: true,
         handleExceptions: true,
         humanReadableUnhandledException: true
+    });
+}
+
+if (appInsights) {
+    logger.info('Activating application insights logger');
+
+    logger.add(
+        winston.transports.Console,
+        new AzureApplicationInsightsLogger({
+            insights: appInsights,
+            level: 'info',
+            sendErrorsAsExceptions: true
+        })
+    );
+
+    logger.rewriters.push((level, msg, meta) => {
+        return flattenMeta(meta);
     });
 }
 
