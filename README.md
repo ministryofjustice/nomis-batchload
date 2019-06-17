@@ -78,20 +78,6 @@ Create a new migration script
 yarn run knex migrate:make <script-name>
 ```
 
-## Seed data
-
-Execute seed scripts to populate DB with test data
-
-```
-yarn seed
-```
-
-Create a new seed file
-
-```
-yarn run knex seed:make <script-name>
-```
-
 ## Local database set up
 
 ```
